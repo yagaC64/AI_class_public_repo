@@ -1,0 +1,2188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SAM.gov Contract Explorer</title>
+    <script type="text/javascript" src="../assets/vendor/vis-network.min.js"></script>
+    <script src="../assets/vendor/papaparse.min.js"></script>
+
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #eef2f5;
+            overflow: hidden;
+            color: #2c3e50;
+        }
+
+        #mynetwork {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+
+        #controlPanel {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 380px;
+            max-width: calc(100vw - 30px);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            border: 1px solid #cfd9e0;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+
+        #controlPanel h1 {
+            margin: 0 0 5px 0;
+            font-size: 1.4rem;
+            color: #1e3799;
+        }
+
+        #controlPanel p.subtitle {
+            margin: 0 0 15px 0;
+            font-size: 0.85rem;
+            color: #60a3bc;
+            font-weight: 600;
+        }
+
+        .control-group {
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .control-group:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .control-group label {
+            display: block;
+            font-weight: 600;
+            font-size: 0.85rem;
+            margin-bottom: 5px;
+            color: #34495e;
+        }
+
+        input[type="file"],
+        input[type="date"],
+        select,
+        input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #bdc3c7;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.85rem;
+            background: #fff;
+        }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        button {
+            font: inherit;
+        }
+
+        .date-row {
+            display: flex;
+            gap: 10px;
+        }
+
+        .date-row div {
+            flex: 1;
+        }
+
+        .layer-row {
+            margin-bottom: 5px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button-row button {
+            flex: 1;
+        }
+
+        .field-label-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .field-label-row label {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .control-help {
+            margin: 6px 0 0;
+            font-size: 0.75rem;
+            color: #718093;
+            line-height: 1.4;
+        }
+
+        button.btn-primary {
+            background-color: #0c2461;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: background 0.2s;
+            margin-top: 5px;
+        }
+
+        button.btn-primary:hover {
+            background-color: #1e3799;
+        }
+
+        button.btn-primary:disabled {
+            opacity: 0.6;
+            cursor: wait;
+        }
+
+        button.btn-secondary {
+            background: #eef4fb;
+            color: #1e3799;
+            border: 1px solid #c7d7ea;
+            padding: 8px 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+
+        button.btn-secondary:hover {
+            background: #dce9f8;
+        }
+
+        button.btn-secondary:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+        }
+
+        #dynamicSliders {
+            margin-top: 10px;
+        }
+
+        .slider-wrapper {
+            margin-bottom: 10px;
+        }
+
+        .slider-wrapper label {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #4a69bd;
+        }
+
+        .range-caption {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 4px;
+            font-size: 0.72rem;
+            color: #718093;
+        }
+
+        .pinning-controls {
+            margin-top: 12px;
+            padding-top: 12px;
+            border-top: 1px solid #e1e8ed;
+        }
+
+        .analysis-summary {
+            font-size: 0.8rem;
+            color: #566573;
+            line-height: 1.5;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .analysis-card {
+            background: #f7f9fb;
+            border: 1px solid #d6e4ef;
+            border-radius: 6px;
+            padding: 8px;
+        }
+
+        .analysis-label {
+            display: block;
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+            color: #7f8c8d;
+        }
+
+        .analysis-value {
+            display: block;
+            margin-top: 4px;
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #0c2461;
+            line-height: 1.3;
+        }
+
+        .analysis-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .analysis-actions button {
+            flex: 1;
+        }
+
+        #overviewHistogram {
+            width: 100%;
+            height: 96px;
+            display: block;
+            margin-top: 10px;
+            border: 1px solid #d6e4ef;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #f8fbff 0%, #edf3fb 100%);
+        }
+
+        .analysis-note {
+            margin: 8px 0 0;
+            font-size: 0.74rem;
+            color: #6c7a89;
+            line-height: 1.4;
+        }
+
+        .selection-indicator {
+            display: none;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #d6e4ef;
+            background: #f7faff;
+            font-size: 0.78rem;
+            color: #29405f;
+            line-height: 1.4;
+        }
+
+        .naics-filter {
+            margin-bottom: 12px;
+            padding: 10px;
+            border: 1px solid #d6e4ef;
+            border-radius: 8px;
+            background: #f9fbff;
+        }
+
+        .naics-filter-header {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 8px;
+        }
+
+        .naics-filter-title {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: #34495e;
+        }
+
+        .help-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            margin-top: 0;
+            border-radius: 999px;
+            border: 1px solid #b8cbe3;
+            background: #eef4fb;
+            color: #1e3799;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .help-button:hover {
+            background: #dce9f8;
+        }
+
+        .naics-lookup-link {
+            font-size: 0.76rem;
+            font-weight: 600;
+            color: #1e3799;
+            text-decoration: none;
+        }
+
+        .naics-lookup-link:hover {
+            text-decoration: underline;
+        }
+
+        .naics-inputs {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .naics-char-input {
+            width: 38px;
+            text-align: center;
+            font-size: 1rem;
+            font-weight: 700;
+            letter-spacing: 0.02em;
+            padding: 8px 0;
+        }
+
+        .naics-pattern-preview {
+            margin-top: 8px;
+            font-size: 0.76rem;
+            color: #607080;
+        }
+
+        .multi-select {
+            margin-top: 8px;
+            border: 1px solid #d6e4ef;
+            border-radius: 8px;
+            background: #fff;
+            overflow: hidden;
+        }
+
+        .multi-select:first-of-type {
+            margin-top: 0;
+        }
+
+        .multi-select summary {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 10px;
+            padding: 9px 10px;
+            cursor: pointer;
+            list-style: none;
+            font-size: 0.82rem;
+            font-weight: 600;
+            color: #34495e;
+        }
+
+        .multi-select summary::-webkit-details-marker {
+            display: none;
+        }
+
+        .multi-select[open] summary {
+            background: #f7fbff;
+            border-bottom: 1px solid #e1e8ed;
+        }
+
+        .multi-select-summary {
+            max-width: 58%;
+            font-size: 0.74rem;
+            font-weight: 500;
+            color: #718093;
+            text-align: right;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+
+        .multi-select-panel {
+            padding: 8px 10px 10px;
+        }
+
+        .multi-select-actions {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 8px;
+        }
+
+        .multi-select-actions button {
+            flex: 1;
+            margin-top: 0;
+            padding: 6px 8px;
+            font-size: 0.76rem;
+        }
+
+        .multi-select-options {
+            display: grid;
+            gap: 6px;
+            max-height: 170px;
+            overflow-y: auto;
+        }
+
+        .multi-select-option {
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            font-size: 0.78rem;
+            color: #34495e;
+            line-height: 1.35;
+        }
+
+        .multi-select-option input {
+            margin-top: 2px;
+        }
+
+        .multi-select-empty {
+            font-size: 0.76rem;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        .filter-refresh-notice {
+            display: none;
+            margin: 10px 0 0;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #f3d19b;
+            background: #fff8eb;
+            color: #8a5a00;
+            font-size: 0.76rem;
+            line-height: 1.4;
+        }
+
+        .filter-refresh-notice.is-visible {
+            display: block;
+        }
+
+        .help-dialog {
+            width: min(720px, calc(100vw - 32px));
+            border: none;
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.25);
+        }
+
+        .help-dialog::backdrop {
+            background: rgba(17, 24, 39, 0.45);
+        }
+
+        .help-dialog-panel {
+            padding: 20px;
+            background: #fff;
+        }
+
+        .help-dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .help-dialog-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #0c2461;
+        }
+
+        .help-dialog-close {
+            width: auto;
+            margin-top: 0;
+            padding: 7px 10px;
+        }
+
+        .help-dialog p {
+            margin: 0 0 12px;
+            font-size: 0.84rem;
+            line-height: 1.5;
+            color: #34495e;
+        }
+
+        .help-dialog-list {
+            margin: 0 0 12px 18px;
+            padding: 0;
+            color: #34495e;
+            font-size: 0.84rem;
+            line-height: 1.6;
+        }
+
+        .help-dialog-list li {
+            margin-bottom: 8px;
+        }
+
+        .help-dialog-note {
+            font-size: 0.78rem;
+            color: #6c7a89;
+        }
+
+        .help-dialog-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 12px 0;
+            font-size: 0.8rem;
+        }
+
+        .help-dialog-table th,
+        .help-dialog-table td {
+            border: 1px solid #d6e4ef;
+            padding: 8px;
+            text-align: left;
+            vertical-align: top;
+        }
+
+        .help-dialog-table th {
+            background: #f4f8fd;
+            color: #0c2461;
+        }
+
+        .histogram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #607080;
+        }
+
+        .histogram-meta {
+            font-weight: 500;
+            color: #7f8c8d;
+            text-align: right;
+        }
+
+        .histogram {
+            margin-top: 8px;
+            height: 130px;
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            padding: 10px 8px 8px;
+            border-radius: 8px;
+            border: 1px solid #d6e4ef;
+            background: linear-gradient(180deg, #fbfdff 0%, #eef4fb 100%);
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .histogram-empty {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        .histogram-bar {
+            flex: 0 0 10px;
+            min-width: 10px;
+            padding: 0;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            background: linear-gradient(180deg, #4a69bd 0%, #0c2461 100%);
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .histogram-bar:hover,
+        .histogram-bar:focus-visible {
+            opacity: 0.9;
+            transform: translateY(-2px);
+            outline: none;
+        }
+
+        .histogram-bar.is-selected {
+            background: linear-gradient(180deg, #f6b93b 0%, #e58e26 100%);
+            box-shadow: 0 0 0 2px #f6b93b;
+        }
+
+        .histogram-scale {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            margin-top: 6px;
+            font-size: 0.72rem;
+            color: #7f8c8d;
+        }
+
+        #infoPanel {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 350px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+            padding: 20px;
+            z-index: 10;
+            display: none;
+            backdrop-filter: blur(5px);
+            border: 1px solid #cfd9e0;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+
+        #infoPanel h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: #0c2461;
+            border-bottom: 2px solid #4a69bd;
+            padding-bottom: 8px;
+            word-wrap: break-word;
+        }
+
+        .detail-item {
+            margin-bottom: 8px;
+            font-size: 0.85rem;
+        }
+
+        .detail-label {
+            font-weight: bold;
+            color: #2c3e50;
+            display: inline-block;
+            width: 90px;
+            vertical-align: top;
+        }
+
+        .detail-value {
+            color: #34495e;
+            display: inline-block;
+            width: calc(100% - 95px);
+            word-wrap: break-word;
+        }
+
+        .desc-box {
+            background: #f8f9fa;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.8rem;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid #b8e994;
+            margin-top: 10px;
+            white-space: pre-wrap;
+            font-family: monospace;
+        }
+
+        .action-link {
+            display: inline-block;
+            margin-top: 10px;
+            padding: 6px 12px;
+            background-color: #78e08f;
+            color: #079992;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            font-size: 0.85rem;
+            text-align: center;
+            width: 100%;
+            box-sizing: border-box;
+        }
+
+        .action-link:hover {
+            background-color: #b8e994;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="controlPanel">
+        <h1>Contract Explorer</h1>
+        <p class="subtitle">SAM.gov Opportunity Network</p>
+
+        <div class="control-group">
+            <div class="field-label-row">
+                <label for="csvFileInput">1. Select CSV File</label>
+                <button id="btnCsvHelp" type="button" class="help-button" aria-label="How to fetch the latest SAM.gov CSV" title="How to fetch the latest SAM.gov CSV">?</button>
+            </div>
+            <input type="file" id="csvFileInput" accept=".csv">
+            <p class="control-help">Use the <code>?</code> for the latest SAM.gov download steps. Open the downloaded file from your machine with this picker; do not copy raw extracts into the repo. Need a harmless starter file? Use <a href="/tools/examples/sam-contract-opportunities-sample.csv">the bundled sample CSV</a>.</p>
+        </div>
+
+        <div class="control-group">
+            <label>2. Show Entries</label>
+            <select id="statusFilter">
+                <option value="all">All</option>
+                <option value="active">Active</option>
+            </select>
+            <p class="control-help">Active mirrors SAM.gov's "Show active only". If a ResponseDeadLine has an explicit timezone offset, this visualizer honors it; rows without one fall back to America/New_York.</p>
+        </div>
+
+        <div class="control-group">
+            <label>3. File Analysis</label>
+            <div id="fileAnalysisSummary" class="analysis-summary">Upload a CSV to inspect row counts, PostedDate coverage, and the available date range before filtering.</div>
+            <div id="fileAnalysisStats" class="analysis-grid"></div>
+            <div class="analysis-actions">
+                <button id="btnUseFullRange" type="button" class="btn-secondary" disabled>Use Full Range</button>
+                <button id="btnClearDates" type="button" class="btn-secondary" disabled>Clear Dates</button>
+            </div>
+            <div class="histogram-header">
+                <span>Bird's Eye Date Coverage</span>
+                <span id="overviewMeta" class="histogram-meta"></span>
+            </div>
+            <svg id="overviewHistogram" viewBox="0 0 320 96" preserveAspectRatio="none" role="img" aria-label="Bird's eye date coverage overview"></svg>
+            <div class="histogram-scale">
+                <span id="overviewStartLabel">Earliest date: N/A</span>
+                <span id="overviewEndLabel">Latest date: N/A</span>
+            </div>
+            <p id="overviewNote" class="analysis-note">Blue bars follow the current date filter. Use the detailed bars below for exact single-day picks.</p>
+            <div class="histogram-header">
+                <span>PostedDate Rows Per Day</span>
+                <span id="histogramMeta" class="histogram-meta"></span>
+            </div>
+            <div id="fileHistogram" class="histogram">
+                <div class="histogram-empty">No CSV analyzed yet.</div>
+            </div>
+            <div class="histogram-scale">
+                <span id="histogramStartLabel">Min date</span>
+                <span id="histogramEndLabel">Max date</span>
+            </div>
+            <div id="selectedDayCount" class="selection-indicator"></div>
+            <p class="control-help">Click any bar to set both Start and End to that exact day. Click the same bar again to clear it.</p>
+        </div>
+
+        <div class="control-group">
+            <label>4. Filter by Posted Date</label>
+            <div class="date-row">
+                <div>
+                    <label style="font-size: 0.75rem;">Start</label>
+                    <input type="date" id="dateStart">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem;">End</label>
+                    <input type="date" id="dateEnd">
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>5. Opportunity Codes and Filters</label>
+            <div class="naics-filter">
+                <div class="naics-filter-header">
+                    <span class="naics-filter-title">NAICS</span>
+                    <button id="btnNaicsHelp" type="button" class="help-button" aria-label="What is NAICS?" title="What is NAICS?">?</button>
+                    <a href="https://naicscode.com/" target="_blank" rel="noopener noreferrer" class="naics-lookup-link">Open NAICS lookup</a>
+                </div>
+                <div id="naicsInputs" class="naics-inputs" aria-label="NAICS wildcard filter">
+                    <input type="text" id="naicsChar0" class="naics-char-input" inputmode="numeric" maxlength="1" value="*">
+                    <input type="text" id="naicsChar1" class="naics-char-input" inputmode="numeric" maxlength="1" value="*">
+                    <input type="text" id="naicsChar2" class="naics-char-input" inputmode="numeric" maxlength="1" value="*">
+                    <input type="text" id="naicsChar3" class="naics-char-input" inputmode="numeric" maxlength="1" value="*">
+                    <input type="text" id="naicsChar4" class="naics-char-input" inputmode="numeric" maxlength="1" value="*">
+                    <input type="text" id="naicsChar5" class="naics-char-input" inputmode="numeric" maxlength="1" value="*">
+                </div>
+                <div id="naicsPatternPreview" class="naics-pattern-preview">Pattern: ****** (all NAICS codes)</div>
+                <p class="control-help">Enter one 6-character NAICS pattern using digits or <code>*</code>. Example: <code>33****</code> matches codes that begin with <code>33</code>.</p>
+            </div>
+            <details class="multi-select" id="stateFilterDetails">
+                <summary>
+                    <span>State(s) / Territory(ies)</span>
+                    <span id="stateFilterSummary" class="multi-select-summary">All</span>
+                </summary>
+                <div class="multi-select-panel">
+                    <div class="multi-select-actions">
+                        <button id="clearStateFilter" type="button" class="btn-secondary">Clear</button>
+                        <button id="doneStateFilter" type="button" class="btn-secondary">Done</button>
+                    </div>
+                    <div id="stateFilterOptions" class="multi-select-options">
+                        <div class="multi-select-empty">Load a CSV first.</div>
+                    </div>
+                </div>
+            </details>
+            <details class="multi-select" id="agencyFilterDetails">
+                <summary>
+                    <span>Department / Ind. Agency</span>
+                    <span id="agencyFilterSummary" class="multi-select-summary">All</span>
+                </summary>
+                <div class="multi-select-panel">
+                    <div class="multi-select-actions">
+                        <button id="clearAgencyFilter" type="button" class="btn-secondary">Clear</button>
+                        <button id="doneAgencyFilter" type="button" class="btn-secondary">Done</button>
+                    </div>
+                    <div id="agencyFilterOptions" class="multi-select-options">
+                        <div class="multi-select-empty">Load a CSV first.</div>
+                    </div>
+                </div>
+            </details>
+            <details class="multi-select" id="typeFilterDetails">
+                <summary>
+                    <span>Type(s)</span>
+                    <span id="typeFilterSummary" class="multi-select-summary">All</span>
+                </summary>
+                <div class="multi-select-panel">
+                    <div class="multi-select-actions">
+                        <button id="clearTypeFilter" type="button" class="btn-secondary">Clear</button>
+                        <button id="doneTypeFilter" type="button" class="btn-secondary">Done</button>
+                    </div>
+                    <div id="typeFilterOptions" class="multi-select-options">
+                        <div class="multi-select-empty">Load a CSV first.</div>
+                    </div>
+                </div>
+            </details>
+            <p class="control-help">Pick one or many inside each selector. Values are OR within a selector and AND across selectors. Leaving a selector empty means All.</p>
+            <p id="graphRefreshNotice" class="filter-refresh-notice">Filters changed. Click Generate Graph to refresh the current view.</p>
+        </div>
+
+        <div class="control-group">
+            <label>6. Clustering Layers (Inner to Outer)</label>
+            <div class="layer-row"><select id="layer1"></select></div>
+            <div class="layer-row"><select id="layer2"></select></div>
+            <div class="layer-row"><select id="layer3"></select></div>
+            <div class="layer-row"><select id="layer4"></select></div>
+            <div class="layer-row"><select id="layer5"></select></div>
+        </div>
+
+        <button id="btnGenerate" class="btn-primary">Generate Graph</button>
+        <button id="btnSearch" style="margin-top:10px; padding: 5px; width:100%; font-size:0.8rem; background-color: #60a3bc;" onclick="searchNode()">Search Sol# or Title</button>
+        <div style="display:none;" id="searchBoxWrapper">
+            <input type="text" id="searchInput" placeholder="Enter keyword..." style="margin-top:5px;">
+        </div>
+
+        <div class="control-group" id="slidersContainer" style="display: none; margin-top:15px; padding-top:15px; border-top: 2px solid #bdc3c7;">
+            <label>7. Graph Controls</label>
+            <div id="dynamicSliders"></div>
+            <div class="slider-wrapper">
+                <label>Opening Wiggle</label>
+                <input type="range" id="sliderWiggle" min="0" max="100" value="20">
+                <div class="range-caption">
+                    <span>Steady</span>
+                    <span>Wiggly</span>
+                </div>
+            </div>
+            <div class="pinning-controls">
+                <label>Node Pinning</label>
+                <p class="control-help">Drag any node and release it to pin it in place. Use the buttons below to free pinned nodes again.</p>
+                <div class="button-row">
+                    <button id="btnUnpinSelected" type="button" class="btn-secondary">Unpin Selected</button>
+                    <button id="btnUnpinAll" type="button" class="btn-secondary">Unpin All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mynetwork"></div>
+
+    <div id="infoPanel">
+        <h2 id="panelTitle">Opportunity Details</h2>
+        <div id="panelContent"></div>
+    </div>
+
+    <dialog id="csvHelpDialog" class="help-dialog" aria-labelledby="csvHelpTitle">
+        <div class="help-dialog-panel">
+            <div class="help-dialog-header">
+                <h3 id="csvHelpTitle">How to fetch the latest SAM.gov CSV</h3>
+                <button id="btnCsvHelpClose" type="button" class="btn-secondary help-dialog-close">Close</button>
+            </div>
+            <p>Use the current public full Contract Opportunities export from SAM.gov, then load that file here with the picker above.</p>
+            <ol class="help-dialog-list">
+                <li><a href="https://sam.gov/" target="_blank" rel="noopener noreferrer">Go to https://sam.gov/</a></li>
+                <li><a href="https://sam.gov/data-services" target="_blank" rel="noopener noreferrer">Go to https://sam.gov/data-services</a></li>
+                <li><a href="https://sam.gov/data-services/Contract%20Opportunities?privacy=Public" target="_blank" rel="noopener noreferrer">Go to https://sam.gov/data-services/Contract%20Opportunities?privacy=Public</a></li>
+                <li><a href="https://sam.gov/data-services/Contract%20Opportunities/datagov?privacy=Public" target="_blank" rel="noopener noreferrer">Go to https://sam.gov/data-services/Contract%20Opportunities/datagov?privacy=Public</a></li>
+                <li>Download <code>ContractOpportunitiesFullCSV.csv</code>.</li>
+            </ol>
+            <p class="help-dialog-note">Each link opens in a new tab so this session stays in place. Keep the CSV outside the repo and load it directly from Downloads or another local folder.</p>
+        </div>
+    </dialog>
+
+    <dialog id="naicsHelpDialog" class="help-dialog" aria-labelledby="naicsHelpTitle">
+        <div class="help-dialog-panel">
+            <div class="help-dialog-header">
+                <h3 id="naicsHelpTitle">What is NAICS?</h3>
+                <button id="btnNaicsHelpClose" type="button" class="btn-secondary help-dialog-close">Close</button>
+            </div>
+            <p>NAICS (North American Industry Classification System) is a standardized coding system used by Federal statistical agencies to classify business establishments based on their primary economic activity.</p>
+            <p>It is the "language" used by the governments of the United States, Canada, and Mexico to collect, analyze, and publish statistical data about the North American economy.</p>
+            <table class="help-dialog-table">
+                <thead>
+                    <tr>
+                        <th>Digits</th>
+                        <th>Level</th>
+                        <th>Example (for 333120)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>1-2</td>
+                        <td>Sector</td>
+                        <td>33 (Manufacturing)</td>
+                    </tr>
+                    <tr>
+                        <td>3</td>
+                        <td>Subsector</td>
+                        <td>333 (Machinery Manufacturing)</td>
+                    </tr>
+                    <tr>
+                        <td>4</td>
+                        <td>Industry Group</td>
+                        <td>3331 (Agri., Construction, and Mining Machinery Mfg.)</td>
+                    </tr>
+                    <tr>
+                        <td>5</td>
+                        <td>NAICS Industry</td>
+                        <td>33312 (Construction Machinery Manufacturing)</td>
+                    </tr>
+                    <tr>
+                        <td>6</td>
+                        <td>National Industry</td>
+                        <td>333120 (U.S.-specific detail)</td>
+                    </tr>
+                </tbody>
+            </table>
+            <p>Note: While the official NAICS code ends at 6 digits, you may occasionally see 10-digit codes in certain government or census reports. These are known as Product Codes, which extend the 6-digit NAICS industry code to identify specific products or services within that industry.</p>
+            <p><a href="https://naicscode.com/" target="_blank" rel="noopener noreferrer" class="naics-lookup-link">Open the NAICS lookup website in a new tab</a></p>
+        </div>
+    </dialog>
+
+    <script>
+        let network = null;
+        const nodes = new vis.DataSet();
+        const edges = new vis.DataSet();
+        let allOpportunities = [];
+        let availableFields = [];
+        let fileAnalysis = null;
+        let isParsingFile = false;
+        let hasGeneratedGraph = false;
+        let opportunityFilterSelections = {
+            state: [],
+            agency: [],
+            type: []
+        };
+        let naicsFilterPattern = '******';
+
+        const defaultLayers = [
+            'Department/Ind.Agency',
+            'Sub-Tier',
+            'SetASide',
+            'NaicsCode',
+            'Type'
+        ];
+        const dateFieldName = 'PostedDate';
+        const fallbackTimeZone = 'America/New_York';
+        const opportunityFilterConfig = {
+            state: {
+                field: 'State',
+                optionsId: 'stateFilterOptions',
+                summaryId: 'stateFilterSummary',
+                detailsId: 'stateFilterDetails',
+                clearButtonId: 'clearStateFilter',
+                doneButtonId: 'doneStateFilter'
+            },
+            agency: {
+                field: 'Department/Ind.Agency',
+                optionsId: 'agencyFilterOptions',
+                summaryId: 'agencyFilterSummary',
+                detailsId: 'agencyFilterDetails',
+                clearButtonId: 'clearAgencyFilter',
+                doneButtonId: 'doneAgencyFilter'
+            },
+            type: {
+                field: 'Type',
+                optionsId: 'typeFilterOptions',
+                summaryId: 'typeFilterSummary',
+                detailsId: 'typeFilterDetails',
+                clearButtonId: 'clearTypeFilter',
+                doneButtonId: 'doneTypeFilter'
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('csvFileInput').addEventListener('change', handleFileSelection);
+            document.getElementById('statusFilter').addEventListener('change', handleStatusFilterChange);
+            document.getElementById('btnGenerate').addEventListener('click', processAndGraph);
+            document.getElementById('btnUseFullRange').addEventListener('click', applyFullDateRange);
+            document.getElementById('btnClearDates').addEventListener('click', clearDateFilters);
+            document.getElementById('dateStart').addEventListener('change', function() {
+                syncDateFilterState('dateStart');
+            });
+            document.getElementById('dateEnd').addEventListener('change', function() {
+                syncDateFilterState('dateEnd');
+            });
+            document.getElementById('sliderWiggle').addEventListener('input', function() {
+                applyWiggleSetting(false);
+            });
+            document.getElementById('sliderWiggle').addEventListener('change', function() {
+                applyWiggleSetting(true);
+            });
+            document.getElementById('btnUnpinSelected').addEventListener('click', function() {
+                const selectedNodeIds = network ? network.getSelectedNodes() : [];
+                if (!selectedNodeIds.length) {
+                    alert('Select one or more nodes to unpin.');
+                    return;
+                }
+                unpinNodes(selectedNodeIds);
+            });
+            document.getElementById('btnUnpinAll').addEventListener('click', function() {
+                unpinNodes(nodes.getIds());
+            });
+            document.getElementById('btnCsvHelp').addEventListener('click', openCsvHelpDialog);
+            document.getElementById('btnCsvHelpClose').addEventListener('click', closeCsvHelpDialog);
+            document.getElementById('btnNaicsHelp').addEventListener('click', openNaicsHelpDialog);
+            document.getElementById('btnNaicsHelpClose').addEventListener('click', closeNaicsHelpDialog);
+
+            Object.keys(opportunityFilterConfig).forEach(filterKey => {
+                const config = opportunityFilterConfig[filterKey];
+
+                document.getElementById(config.optionsId).addEventListener('change', function(event) {
+                    if (!event.target.matches('input[type="checkbox"]')) return;
+                    handleOpportunityFilterSelectionChange(filterKey, event.target.value, event.target.checked);
+                });
+
+                document.getElementById(config.clearButtonId).addEventListener('click', function() {
+                    clearOpportunityFilterSelection(filterKey);
+                });
+
+                document.getElementById(config.doneButtonId).addEventListener('click', function() {
+                    document.getElementById(config.detailsId).open = false;
+                });
+            });
+
+            document.querySelectorAll('.naics-char-input').forEach((input, index) => {
+                input.addEventListener('focus', function() {
+                    this.select();
+                });
+                input.addEventListener('input', function(event) {
+                    handleNaicsInput(event, index);
+                });
+                input.addEventListener('keydown', function(event) {
+                    handleNaicsKeydown(event, index);
+                });
+                input.addEventListener('blur', function() {
+                    if (!this.value) {
+                        this.value = '*';
+                    }
+                    syncNaicsPatternFromInputs();
+                });
+            });
+
+            bindDialogBackdropClose('csvHelpDialog', closeCsvHelpDialog);
+            bindDialogBackdropClose('naicsHelpDialog', closeNaicsHelpDialog);
+
+            populateDropdowns();
+            renderOpportunityFilters();
+            renderNaicsPatternPreview();
+            resetFileAnalysis('Upload a CSV to inspect row counts, PostedDate coverage, and the available date range before filtering.');
+        });
+
+        function handleFileSelection(e) {
+            const file = e.target.files[0];
+
+            allOpportunities = [];
+            availableFields = [];
+            fileAnalysis = null;
+            populateDropdowns();
+            clearDateFilters();
+            resetOpportunityFilters();
+            resetGraph();
+
+            if (!file) {
+                resetFileAnalysis('Upload a CSV to inspect row counts, PostedDate coverage, and the available date range before filtering.');
+                return;
+            }
+
+            setParsingState(true);
+            resetFileAnalysis(`Analyzing ${file.name}...`);
+
+            Papa.parse(file, {
+                header: true,
+                skipEmptyLines: true,
+                worker: true,
+                complete: function(results) {
+                    allOpportunities = normalizeRows(results.data);
+                    availableFields = (results.meta && results.meta.fields) ? results.meta.fields : Object.keys(allOpportunities[0] || {});
+                    populateDropdowns();
+                    renderOpportunityFilters();
+                    refreshAnalysisForCurrentScope();
+                    setParsingState(false);
+                },
+                error: function(err) {
+                    console.error('CSV parse error', err);
+                    resetFileAnalysis('Could not analyze the selected CSV.');
+                    setParsingState(false);
+                    alert('Could not parse the selected CSV.');
+                }
+            });
+        }
+
+        function resetGraph() {
+            nodes.clear();
+            edges.clear();
+            hideInfoPanel();
+            document.getElementById('slidersContainer').style.display = 'none';
+            hasGeneratedGraph = false;
+            hideGraphRefreshNotice();
+            if (network !== null) {
+                network.destroy();
+                network = null;
+            }
+        }
+
+        function populateDropdowns() {
+            for (let i = 1; i <= 5; i++) {
+                const select = document.getElementById(`layer${i}`);
+                select.innerHTML = '<option value="none">-- None --</option>';
+
+                availableFields.forEach(field => {
+                    const option = document.createElement('option');
+                    option.value = field;
+                    option.textContent = field;
+                    select.appendChild(option);
+                });
+
+                if (defaultLayers[i - 1] && availableFields.includes(defaultLayers[i - 1])) {
+                    select.value = defaultLayers[i - 1];
+                }
+            }
+        }
+
+        function handleStatusFilterChange() {
+            if (!allOpportunities.length) return;
+
+            renderOpportunityFilters();
+            refreshAnalysisForCurrentScope();
+            markGraphNeedsRefresh();
+        }
+
+        function normalizeRows(rows) {
+            return (rows || []).filter(row =>
+                row && Object.values(row).some(value => String(value === null || value === undefined ? '' : value).trim() !== '')
+            );
+        }
+
+        function setParsingState(isBusy) {
+            isParsingFile = isBusy;
+            const generateButton = document.getElementById('btnGenerate');
+            generateButton.disabled = isBusy;
+            generateButton.textContent = isBusy ? 'Parsing CSV...' : 'Generate Graph';
+        }
+
+        function resetFileAnalysis(summaryText) {
+            document.getElementById('fileAnalysisSummary').textContent = summaryText;
+            document.getElementById('fileAnalysisStats').innerHTML = '';
+            document.getElementById('overviewHistogram').innerHTML = '<text x="160" y="52" text-anchor="middle" font-size="12" fill="#7f8c8d">No CSV analyzed yet.</text>';
+            document.getElementById('overviewMeta').textContent = '';
+            document.getElementById('overviewStartLabel').textContent = 'Earliest date: N/A';
+            document.getElementById('overviewEndLabel').textContent = 'Latest date: N/A';
+            document.getElementById('fileHistogram').innerHTML = '<div class="histogram-empty">No CSV analyzed yet.</div>';
+            document.getElementById('histogramMeta').textContent = '';
+            document.getElementById('histogramStartLabel').textContent = 'Min date';
+            document.getElementById('histogramEndLabel').textContent = 'Max date';
+            document.getElementById('btnUseFullRange').disabled = true;
+            document.getElementById('btnClearDates').disabled = true;
+            document.getElementById('dateStart').min = '';
+            document.getElementById('dateStart').max = '';
+            document.getElementById('dateEnd').min = '';
+            document.getElementById('dateEnd').max = '';
+            document.getElementById('selectedDayCount').style.display = 'none';
+            document.getElementById('selectedDayCount').textContent = '';
+        }
+
+        function hideGraphRefreshNotice() {
+            document.getElementById('graphRefreshNotice').classList.remove('is-visible');
+        }
+
+        function markGraphNeedsRefresh() {
+            if (!hasGeneratedGraph) return;
+            document.getElementById('graphRefreshNotice').classList.add('is-visible');
+        }
+
+        function escapeHtml(value) {
+            return String(value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+
+        function formatCount(value) {
+            return Number(value || 0).toLocaleString();
+        }
+
+        function renderAnalysisCard(label, value) {
+            return `
+                <div class="analysis-card">
+                    <span class="analysis-label">${escapeHtml(label)}</span>
+                    <span class="analysis-value">${escapeHtml(value)}</span>
+                </div>
+            `;
+        }
+
+        function analyzeFile(opportunities) {
+            const dailyCounts = new Map();
+            let datedRows = 0;
+            let undatedRows = 0;
+            let invalidDateRows = 0;
+            let minDate = null;
+            let maxDate = null;
+
+            opportunities.forEach(opp => {
+                const rawDate = opp[dateFieldName];
+
+                if (rawDate === null || rawDate === undefined || String(rawDate).trim() === '') {
+                    undatedRows += 1;
+                    return;
+                }
+
+                const cleanedDate = cleanDate(rawDate);
+                if (!cleanedDate) {
+                    invalidDateRows += 1;
+                    return;
+                }
+
+                datedRows += 1;
+                dailyCounts.set(cleanedDate, (dailyCounts.get(cleanedDate) || 0) + 1);
+
+                if (!minDate || cleanedDate < minDate) minDate = cleanedDate;
+                if (!maxDate || cleanedDate > maxDate) maxDate = cleanedDate;
+            });
+
+            const perDay = Array.from(dailyCounts.entries())
+                .sort((a, b) => a[0].localeCompare(b[0]))
+                .map(([date, count]) => ({ date: date, count: count }));
+
+            const busiestDay = perDay.reduce((peak, entry) => {
+                if (!peak || entry.count > peak.count) return entry;
+                return peak;
+            }, null);
+
+            return {
+                totalRows: opportunities.length,
+                datedRows: datedRows,
+                undatedRows: undatedRows,
+                invalidDateRows: invalidDateRows,
+                minDate: minDate,
+                maxDate: maxDate,
+                activeDays: perDay.length,
+                perDay: perDay,
+                busiestDay: busiestDay,
+                maxDailyCount: perDay.reduce((maxCount, entry) => Math.max(maxCount, entry.count), 0)
+            };
+        }
+
+        function getStatusFilterMode() {
+            return document.getElementById('statusFilter').value;
+        }
+
+        function normalizeBooleanLike(value) {
+            const normalized = String(value === null || value === undefined ? '' : value).trim().toLowerCase();
+            if (!normalized || normalized === 'null') return null;
+            if (['yes', 'y', 'true', '1', 'active'].includes(normalized)) return true;
+            if (['no', 'n', 'false', '0', 'inactive', 'archived'].includes(normalized)) return false;
+            return null;
+        }
+
+        function parseTimeZoneOffsetMinutes(timeZoneName) {
+            const match = String(timeZoneName || '').match(/GMT([+-])(\d{1,2})(?::?(\d{2}))?/i);
+            if (!match) return 0;
+            const sign = match[1] === '-' ? -1 : 1;
+            const hours = parseInt(match[2], 10);
+            const minutes = parseInt(match[3] || '0', 10);
+            return sign * ((hours * 60) + minutes);
+        }
+
+        function getTimeZoneOffsetMinutes(timestampMs, timeZone) {
+            const formatter = new Intl.DateTimeFormat('en-US', {
+                timeZone: timeZone,
+                hour: '2-digit',
+                minute: '2-digit',
+                hourCycle: 'h23',
+                timeZoneName: 'shortOffset'
+            });
+            const timeZoneName = formatter.formatToParts(new Date(timestampMs)).find(part => part.type === 'timeZoneName')?.value;
+            return parseTimeZoneOffsetMinutes(timeZoneName);
+        }
+
+        function zonedDateTimeToUtcMs(parts, timeZone) {
+            let guess = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second);
+
+            for (let i = 0; i < 2; i++) {
+                const offsetMinutes = getTimeZoneOffsetMinutes(guess, timeZone);
+                guess = Date.UTC(parts.year, parts.month - 1, parts.day, parts.hour, parts.minute, parts.second) - (offsetMinutes * 60 * 1000);
+            }
+
+            return guess;
+        }
+
+        function parseResponseDeadlineMs(value) {
+            const rawValue = String(value === null || value === undefined ? '' : value).trim();
+            if (!rawValue || rawValue.toLowerCase() === 'null') return null;
+
+            const normalizedValue = rawValue.replace(' ', 'T');
+
+            if (/(Z|[+-]\d{2}:?\d{2})$/i.test(normalizedValue)) {
+                const explicitTimestamp = Date.parse(normalizedValue);
+                return Number.isNaN(explicitTimestamp) ? null : explicitTimestamp;
+            }
+
+            const match = normalizedValue.match(/^(\d{4})-(\d{2})-(\d{2})(?:T(\d{2})(?::(\d{2}))?(?::(\d{2}))?)?/);
+            if (!match) return null;
+
+            return zonedDateTimeToUtcMs({
+                year: parseInt(match[1], 10),
+                month: parseInt(match[2], 10),
+                day: parseInt(match[3], 10),
+                hour: parseInt(match[4] || '0', 10),
+                minute: parseInt(match[5] || '0', 10),
+                second: parseInt(match[6] || '0', 10)
+            }, fallbackTimeZone);
+        }
+
+        function isOpportunityActiveNow(opportunity) {
+            const activeFlag = normalizeBooleanLike(opportunity['Active']);
+            if (activeFlag === false) {
+                return false;
+            }
+
+            const deadlineMs = parseResponseDeadlineMs(opportunity['ResponseDeadLine']);
+            if (deadlineMs !== null) {
+                return deadlineMs >= Date.now();
+            }
+
+            return activeFlag !== false;
+        }
+
+        function getStatusFilteredOpportunities() {
+            if (getStatusFilterMode() !== 'active') {
+                return allOpportunities;
+            }
+
+            return allOpportunities.filter(isOpportunityActiveNow);
+        }
+
+        function refreshAnalysisForCurrentScope() {
+            fileAnalysis = analyzeFile(getStatusFilteredOpportunities());
+            renderFileAnalysis(fileAnalysis);
+        }
+
+        function resetOpportunityFilters() {
+            opportunityFilterSelections = {
+                state: [],
+                agency: [],
+                type: []
+            };
+            naicsFilterPattern = '******';
+            setNaicsInputsFromPattern();
+            renderOpportunityFilters();
+            hideGraphRefreshNotice();
+        }
+
+        function renderNaicsPatternPreview() {
+            const preview = document.getElementById('naicsPatternPreview');
+            preview.textContent = naicsFilterPattern === '******'
+                ? 'Pattern: ****** (all NAICS codes)'
+                : `Pattern: ${naicsFilterPattern}`;
+        }
+
+        function sanitizeNaicsCharacters(value) {
+            return String(value || '')
+                .replace(/\s+/g, '')
+                .split('')
+                .map(char => char === '*' ? '*' : char.replace(/\D/g, ''))
+                .filter(Boolean)
+                .slice(0, 6);
+        }
+
+        function setNaicsInputsFromPattern() {
+            const chars = naicsFilterPattern.split('');
+            document.querySelectorAll('.naics-char-input').forEach((input, index) => {
+                input.value = chars[index] || '*';
+            });
+            renderNaicsPatternPreview();
+        }
+
+        function syncNaicsPatternFromInputs() {
+            const chars = Array.from(document.querySelectorAll('.naics-char-input')).map(input => {
+                const value = String(input.value || '').trim();
+                return /^[0-9*]$/.test(value) ? value : '*';
+            });
+            naicsFilterPattern = chars.join('');
+            renderNaicsPatternPreview();
+            renderOpportunityFilters();
+            markGraphNeedsRefresh();
+        }
+
+        function handleNaicsInput(event, index) {
+            const inputs = Array.from(document.querySelectorAll('.naics-char-input'));
+            const sanitizedChars = sanitizeNaicsCharacters(event.target.value);
+
+            if (!sanitizedChars.length) {
+                event.target.value = '';
+                syncNaicsPatternFromInputs();
+                return;
+            }
+
+            sanitizedChars.forEach((char, offset) => {
+                const target = inputs[index + offset];
+                if (!target) return;
+                target.value = char;
+            });
+
+            const nextIndex = Math.min(index + sanitizedChars.length, inputs.length - 1);
+            inputs[nextIndex].focus();
+            inputs[nextIndex].select();
+            syncNaicsPatternFromInputs();
+        }
+
+        function handleNaicsKeydown(event, index) {
+            const inputs = Array.from(document.querySelectorAll('.naics-char-input'));
+            if (event.key === 'Backspace' && !event.currentTarget.value && index > 0) {
+                inputs[index - 1].focus();
+                inputs[index - 1].select();
+            }
+        }
+
+        function openDialog(dialogId) {
+            const dialog = document.getElementById(dialogId);
+            if (typeof dialog.showModal === 'function') {
+                dialog.showModal();
+            } else {
+                dialog.setAttribute('open', 'open');
+            }
+        }
+
+        function closeDialog(dialogId) {
+            const dialog = document.getElementById(dialogId);
+            if (typeof dialog.close === 'function') {
+                dialog.close();
+            } else {
+                dialog.removeAttribute('open');
+            }
+        }
+
+        function bindDialogBackdropClose(dialogId, closeHandler) {
+            document.getElementById(dialogId).addEventListener('click', function(event) {
+                const rect = this.getBoundingClientRect();
+                const clickedOutside = event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+                if (clickedOutside) {
+                    closeHandler();
+                }
+            });
+        }
+
+        function openCsvHelpDialog() {
+            openDialog('csvHelpDialog');
+        }
+
+        function closeCsvHelpDialog() {
+            closeDialog('csvHelpDialog');
+        }
+
+        function openNaicsHelpDialog() {
+            openDialog('naicsHelpDialog');
+        }
+
+        function closeNaicsHelpDialog() {
+            closeDialog('naicsHelpDialog');
+        }
+
+        function getOpportunityFilterValue(opportunity, filterKey) {
+            const fieldName = opportunityFilterConfig[filterKey].field;
+            return String(opportunity[fieldName] === null || opportunity[fieldName] === undefined ? '' : opportunity[fieldName]).trim();
+        }
+
+        function getOpportunityFilterSummaryText(selectedValues) {
+            if (!selectedValues.length) return 'All';
+            if (selectedValues.length <= 2) return selectedValues.join(', ');
+            return `${selectedValues[0]}, ${selectedValues[1]} +${selectedValues.length - 2}`;
+        }
+
+        function getAvailableOpportunityFilterValues(filterKey) {
+            let scopedOpportunities = getDateFilteredOpportunities(getStatusFilteredOpportunities());
+            scopedOpportunities = scopedOpportunities.filter(matchesNaicsFilter);
+
+            Object.keys(opportunityFilterConfig).forEach(otherKey => {
+                if (otherKey === filterKey) return;
+                const selectedValues = opportunityFilterSelections[otherKey];
+                if (!selectedValues.length) return;
+
+                scopedOpportunities = scopedOpportunities.filter(opportunity =>
+                    selectedValues.includes(getOpportunityFilterValue(opportunity, otherKey))
+                );
+            });
+
+            return Array.from(new Set(
+                scopedOpportunities
+                    .map(opportunity => getOpportunityFilterValue(opportunity, filterKey))
+                    .filter(Boolean)
+            )).sort((a, b) => a.localeCompare(b));
+        }
+
+        function matchesNaicsFilter(opportunity) {
+            if (naicsFilterPattern === '******') {
+                return true;
+            }
+
+            const normalizedCode = String(opportunity['NaicsCode'] === null || opportunity['NaicsCode'] === undefined ? '' : opportunity['NaicsCode'])
+                .replace(/\D/g, '')
+                .slice(0, 6);
+
+            if (normalizedCode.length !== 6) {
+                return false;
+            }
+
+            const regexPattern = naicsFilterPattern
+                .split('')
+                .map(char => char === '*' ? '\\d' : char)
+                .join('');
+
+            return new RegExp(`^${regexPattern}$`).test(normalizedCode);
+        }
+
+        function renderOpportunityFilters() {
+            Object.keys(opportunityFilterConfig).forEach(filterKey => {
+                const config = opportunityFilterConfig[filterKey];
+                const container = document.getElementById(config.optionsId);
+                const summary = document.getElementById(config.summaryId);
+
+                if (!allOpportunities.length) {
+                    opportunityFilterSelections[filterKey] = [];
+                    container.innerHTML = '<div class="multi-select-empty">Load a CSV first.</div>';
+                    summary.textContent = 'All';
+                    return;
+                }
+
+                const availableValues = getAvailableOpportunityFilterValues(filterKey);
+                opportunityFilterSelections[filterKey] = opportunityFilterSelections[filterKey].filter(value => availableValues.includes(value));
+
+                if (!availableValues.length) {
+                    container.innerHTML = '<div class="multi-select-empty">No matching options for the current upstream filters.</div>';
+                    summary.textContent = 'All';
+                    return;
+                }
+
+                container.innerHTML = availableValues.map(value => `
+                    <label class="multi-select-option">
+                        <input type="checkbox" value="${escapeHtml(value)}" ${opportunityFilterSelections[filterKey].includes(value) ? 'checked' : ''}>
+                        <span>${escapeHtml(value)}</span>
+                    </label>
+                `).join('');
+
+                summary.textContent = getOpportunityFilterSummaryText(opportunityFilterSelections[filterKey]);
+            });
+        }
+
+        function handleOpportunityFilterSelectionChange(filterKey, value, isChecked) {
+            const selectedValues = new Set(opportunityFilterSelections[filterKey]);
+            if (isChecked) {
+                selectedValues.add(value);
+            } else {
+                selectedValues.delete(value);
+            }
+
+            opportunityFilterSelections[filterKey] = Array.from(selectedValues).sort((a, b) => a.localeCompare(b));
+            renderOpportunityFilters();
+            markGraphNeedsRefresh();
+        }
+
+        function clearOpportunityFilterSelection(filterKey) {
+            opportunityFilterSelections[filterKey] = [];
+            renderOpportunityFilters();
+            markGraphNeedsRefresh();
+        }
+
+        function getOpportunityFilteredOpportunities(opportunities) {
+            return opportunities.filter(opportunity =>
+                matchesNaicsFilter(opportunity) &&
+                Object.keys(opportunityFilterConfig).every(filterKey => {
+                    const selectedValues = opportunityFilterSelections[filterKey];
+                    if (!selectedValues.length) return true;
+                    return selectedValues.includes(getOpportunityFilterValue(opportunity, filterKey));
+                })
+            );
+        }
+
+        function renderFileAnalysis(analysis) {
+            if (!analysis.totalRows) {
+                const emptyMessage = getStatusFilterMode() === 'active'
+                    ? 'No currently active opportunities matched the selected CSV.'
+                    : 'The selected CSV did not contain any usable data rows.';
+                resetFileAnalysis(emptyMessage);
+                return;
+            }
+
+            const missingOrInvalid = analysis.undatedRows + analysis.invalidDateRows;
+            const scopePrefix = getStatusFilterMode() === 'active'
+                ? `Showing ${formatCount(analysis.totalRows)} active row(s) out of ${formatCount(allOpportunities.length)} loaded.`
+                : `${formatCount(analysis.totalRows)} rows loaded.`;
+            document.getElementById('fileAnalysisSummary').textContent =
+                `${scopePrefix} ${formatCount(analysis.datedRows)} rows include ${dateFieldName}; ${formatCount(missingOrInvalid)} are missing or unparseable.`;
+
+            document.getElementById('fileAnalysisStats').innerHTML = [
+                renderAnalysisCard('Rows in view', formatCount(analysis.totalRows)),
+                renderAnalysisCard('Rows with PostedDate', formatCount(analysis.datedRows)),
+                renderAnalysisCard('Missing / invalid dates', formatCount(missingOrInvalid)),
+                renderAnalysisCard('Days with data', formatCount(analysis.activeDays)),
+                renderAnalysisCard('Date range', analysis.minDate && analysis.maxDate ? `${analysis.minDate} -> ${analysis.maxDate}` : 'Not available'),
+                renderAnalysisCard('Busiest day', analysis.busiestDay ? `${analysis.busiestDay.date} (${formatCount(analysis.busiestDay.count)})` : 'Not available')
+            ].join('');
+
+            const dateStartInput = document.getElementById('dateStart');
+            const dateEndInput = document.getElementById('dateEnd');
+
+            dateStartInput.min = analysis.minDate || '';
+            dateStartInput.max = analysis.maxDate || '';
+            dateEndInput.min = analysis.minDate || '';
+            dateEndInput.max = analysis.maxDate || '';
+
+            if (dateStartInput.value && analysis.minDate && dateStartInput.value < analysis.minDate) {
+                dateStartInput.value = analysis.minDate;
+            }
+            if (dateEndInput.value && analysis.maxDate && dateEndInput.value > analysis.maxDate) {
+                dateEndInput.value = analysis.maxDate;
+            }
+
+            document.getElementById('btnUseFullRange').disabled = !(analysis.minDate && analysis.maxDate);
+            document.getElementById('btnClearDates').disabled = false;
+
+            renderOverviewHistogram(analysis);
+            renderHistogram(analysis);
+        }
+
+        function renderOverviewHistogram(analysis) {
+            const svg = document.getElementById('overviewHistogram');
+
+            if (!analysis.perDay.length) {
+                svg.innerHTML = '<text x="160" y="52" text-anchor="middle" font-size="12" fill="#7f8c8d">No valid PostedDate values found.</text>';
+                document.getElementById('overviewMeta').textContent = '';
+                document.getElementById('overviewStartLabel').textContent = 'Earliest date: N/A';
+                document.getElementById('overviewEndLabel').textContent = 'Latest date: N/A';
+                return;
+            }
+
+            const width = 320;
+            const height = 96;
+            const chartTop = 6;
+            const chartBottom = 82;
+            const chartHeight = chartBottom - chartTop;
+            const pointCount = analysis.perDay.length;
+            const step = width / pointCount;
+            const barWidth = Math.max(step - 0.4, 0.6);
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+
+            const bars = analysis.perDay.map((entry, index) => {
+                const normalizedHeight = analysis.maxDailyCount === 0 ? 0 : (entry.count / analysis.maxDailyCount) * chartHeight;
+                const barHeight = entry.count === 0 ? 1.2 : Math.max(normalizedHeight, 1.2);
+                const x = index * step;
+                const y = chartBottom - barHeight;
+                const isInRange = (!startDate || entry.date >= startDate) && (!endDate || entry.date <= endDate);
+                const fill = isInRange ? '#1e3799' : '#c9d5e4';
+                const opacity = entry.count === 0 ? 0.25 : 0.94;
+
+                return `
+                    <rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barWidth.toFixed(2)}" height="${barHeight.toFixed(2)}" rx="1.2" fill="${fill}" opacity="${opacity}">
+                        <title>${entry.date}: ${formatCount(entry.count)} row(s)</title>
+                    </rect>
+                `;
+            }).join('');
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            svg.innerHTML = `
+                <line x1="0" y1="${chartBottom}" x2="${width}" y2="${chartBottom}" stroke="#d6e4ef" stroke-width="1" />
+                ${bars}
+            `;
+
+            document.getElementById('overviewStartLabel').textContent = `Earliest date: ${analysis.minDate}`;
+            document.getElementById('overviewEndLabel').textContent = `Latest date: ${analysis.maxDate}`;
+
+            if (startDate && endDate) {
+                document.getElementById('overviewMeta').textContent = startDate === endDate
+                    ? `Focused on ${startDate}`
+                    : `Highlighting ${startDate} -> ${endDate}`;
+            } else if (startDate) {
+                document.getElementById('overviewMeta').textContent = `From ${startDate}`;
+            } else if (endDate) {
+                document.getElementById('overviewMeta').textContent = `Through ${endDate}`;
+            } else {
+                document.getElementById('overviewMeta').textContent = 'Full file range';
+            }
+        }
+
+        function renderHistogram(analysis) {
+            const histogram = document.getElementById('fileHistogram');
+            histogram.innerHTML = '';
+
+            if (!analysis.perDay.length) {
+                histogram.innerHTML = `<div class="histogram-empty">No valid ${escapeHtml(dateFieldName)} values were found in this file.</div>`;
+                document.getElementById('histogramMeta').textContent = '';
+                document.getElementById('histogramStartLabel').textContent = 'Min date';
+                document.getElementById('histogramEndLabel').textContent = 'Max date';
+                return;
+            }
+
+            document.getElementById('histogramMeta').textContent = `Peak ${formatCount(analysis.maxDailyCount)} row(s)`;
+            document.getElementById('histogramStartLabel').textContent = analysis.minDate;
+            document.getElementById('histogramEndLabel').textContent = analysis.maxDate;
+
+            analysis.perDay.forEach(entry => {
+                const bar = document.createElement('button');
+                const heightRatio = analysis.maxDailyCount ? entry.count / analysis.maxDailyCount : 0;
+                bar.type = 'button';
+                bar.className = 'histogram-bar';
+                bar.style.height = `${Math.max(12, Math.round(heightRatio * 110))}px`;
+                bar.title = `${entry.date}: ${formatCount(entry.count)} row(s)`;
+                bar.setAttribute('data-date', entry.date);
+                bar.setAttribute('aria-label', `${entry.date}: ${formatCount(entry.count)} rows`);
+                bar.addEventListener('click', function() {
+                    applySingleDayFilter(entry.date);
+                });
+                histogram.appendChild(bar);
+            });
+
+            syncHistogramSelection();
+        }
+
+        function applySingleDayFilter(date) {
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+
+            if (startDate === date && endDate === date) {
+                clearDateFilters();
+                return;
+            }
+
+            document.getElementById('dateStart').value = date;
+            document.getElementById('dateEnd').value = date;
+            syncDateFilterState();
+        }
+
+        function applyFullDateRange() {
+            if (!fileAnalysis || !fileAnalysis.minDate || !fileAnalysis.maxDate) return;
+            document.getElementById('dateStart').value = fileAnalysis.minDate;
+            document.getElementById('dateEnd').value = fileAnalysis.maxDate;
+            syncDateFilterState();
+        }
+
+        function clearDateFilters() {
+            document.getElementById('dateStart').value = '';
+            document.getElementById('dateEnd').value = '';
+            syncDateFilterState();
+        }
+
+        function syncDateFilterState(changedInputId) {
+            const startInput = document.getElementById('dateStart');
+            const endInput = document.getElementById('dateEnd');
+
+            if (startInput.value && endInput.value && startInput.value > endInput.value) {
+                if (changedInputId === 'dateStart') {
+                    endInput.value = startInput.value;
+                } else if (changedInputId === 'dateEnd') {
+                    startInput.value = endInput.value;
+                }
+            }
+
+            if (fileAnalysis) {
+                renderOverviewHistogram(fileAnalysis);
+            }
+            renderOpportunityFilters();
+            syncHistogramSelection();
+            markGraphNeedsRefresh();
+        }
+
+        function syncHistogramSelection() {
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+
+            document.querySelectorAll('.histogram-bar').forEach(bar => {
+                const isSelected = startDate && endDate && startDate === endDate && bar.getAttribute('data-date') === startDate;
+                bar.classList.toggle('is-selected', isSelected);
+            });
+
+            updateSelectedDayIndicator(startDate, endDate);
+        }
+
+        function updateSelectedDayIndicator(startDate, endDate) {
+            const indicator = document.getElementById('selectedDayCount');
+            if (!fileAnalysis || !startDate || !endDate || startDate !== endDate) {
+                indicator.style.display = 'none';
+                indicator.textContent = '';
+                return;
+            }
+
+            const selectedEntry = fileAnalysis.perDay.find(entry => entry.date === startDate);
+            const rowCount = selectedEntry ? selectedEntry.count : 0;
+            indicator.textContent = `${startDate}: ${formatCount(rowCount)} row(s) in the current view. Click the same bar again to clear.`;
+            indicator.style.display = 'block';
+        }
+
+        function cleanDate(dateStr) {
+            if (!dateStr) return null;
+            const match = String(dateStr).match(/\d{4}-\d{2}-\d{2}/);
+            return match ? match[0] : null;
+        }
+
+        function processAndGraph() {
+            if (isParsingFile) {
+                alert('The CSV is still being analyzed. Please wait a moment and try again.');
+                return;
+            }
+
+            if (allOpportunities.length === 0) {
+                alert('Please select a CSV file first.');
+                return;
+            }
+
+            buildHierarchy(false);
+        }
+
+        function getDateFilteredOpportunities(opportunities) {
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+
+            return opportunities.filter(opp => {
+                const postedDate = cleanDate(opp[dateFieldName]);
+                if (!postedDate) return true;
+                if (startDate && postedDate < startDate) return false;
+                if (endDate && postedDate > endDate) return false;
+                return true;
+            });
+        }
+
+        function buildHierarchy(silentMode) {
+            nodes.clear();
+            edges.clear();
+
+            const statusFilteredOpportunities = getStatusFilteredOpportunities();
+            if (!statusFilteredOpportunities.length) {
+                resetGraph();
+                if (!silentMode) {
+                    alert(getStatusFilterMode() === 'active'
+                        ? 'No opportunities are currently active under the selected Show filter.'
+                        : 'No opportunities are available in the loaded CSV.');
+                }
+                return;
+            }
+
+            const filteredOpps = getOpportunityFilteredOpportunities(getDateFilteredOpportunities(statusFilteredOpportunities));
+
+            if (filteredOpps.length === 0) {
+                resetGraph();
+                if (!silentMode) {
+                    alert('No opportunities found for the selected filters.');
+                }
+                return;
+            }
+
+            const activeLayers = [];
+            for (let i = 1; i <= 5; i++) {
+                const value = document.getElementById(`layer${i}`).value;
+                if (value !== 'none') {
+                    activeLayers.push({ id: `layer${i}`, field: value, label: value });
+                }
+            }
+
+            nodes.add({
+                id: 'root',
+                label: 'Federal\nContracts',
+                shape: 'database',
+                size: 30,
+                color: '#1e3799',
+                font: { color: '#fff' }
+            });
+
+            const addedNodes = new Set(['root']);
+
+            filteredOpps.forEach(opp => {
+                let parentId = 'root';
+
+                activeLayers.forEach((layer, index) => {
+                    let nodeValue = opp[layer.field];
+                    if (!nodeValue || nodeValue.trim() === '') {
+                        nodeValue = 'Unspecified';
+                    }
+
+                    const nodeId = `l${index}_${parentId}_${nodeValue}`.replace(/[^a-zA-Z0-9_]/g, '_');
+
+                    if (!addedNodes.has(nodeId)) {
+                        const colors = ['#4a69bd', '#60a3bc', '#78e08f', '#f6b93b', '#e55039'];
+                        nodes.add({
+                            id: nodeId,
+                            label: nodeValue.substring(0, 35) + (nodeValue.length > 35 ? '...' : ''),
+                            shape: 'box',
+                            color: { background: colors[index % colors.length], border: '#ffffff' },
+                            font: { color: (index === 2 || index === 3) ? '#2c3e50' : '#ffffff', size: 14 - index }
+                        });
+                        addedNodes.add(nodeId);
+                    }
+
+                    const edgeId = `e_${parentId}_${nodeId}`;
+                    if (!edges.get(edgeId)) {
+                        edges.add({
+                            id: edgeId,
+                            from: parentId,
+                            to: nodeId,
+                            type: `edge_level_${index}`,
+                            length: 180 - (index * 25),
+                            color: { opacity: 0.6, color: '#b2bec3' }
+                        });
+                    }
+
+                    parentId = nodeId;
+                });
+
+                const solNumber = opp['Sol#'] || opp['NoticeId'] || 'Unknown Sol#';
+                const leafId = `opp_${opp['NoticeId'] || solNumber}`;
+
+                if (!addedNodes.has(leafId)) {
+                    nodes.add({
+                        id: leafId,
+                        label: solNumber,
+                        group: 'leaf',
+                        shape: 'hexagon',
+                        size: 12,
+                        color: { background: '#079992', border: '#38ada9' },
+                        title: opp['Title'],
+                        details: opp
+                    });
+                    addedNodes.add(leafId);
+
+                    edges.add({
+                        id: `e_${parentId}_${leafId}`,
+                        from: parentId,
+                        to: leafId,
+                        type: 'edge_leaf',
+                        length: 80,
+                        color: { opacity: 0.4, color: '#079992' }
+                    });
+                }
+            });
+
+            generateSliders(activeLayers);
+            initNetwork();
+            hasGeneratedGraph = true;
+            hideGraphRefreshNotice();
+        }
+
+        function generateSliders(activeLayers) {
+            const containerDiv = document.getElementById('slidersContainer');
+            const slidersDiv = document.getElementById('dynamicSliders');
+            slidersDiv.innerHTML = '';
+            containerDiv.style.display = 'block';
+
+            const createSlider = (edgeType, labelText, defaultLength) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'slider-wrapper';
+
+                const label = document.createElement('label');
+                label.textContent = labelText;
+
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.min = '30';
+                slider.max = '500';
+                slider.value = defaultLength;
+                slider.addEventListener('input', function() {
+                    updateEdgeLengths(edgeType, parseInt(this.value, 10));
+                });
+
+                wrapper.appendChild(label);
+                wrapper.appendChild(slider);
+                slidersDiv.appendChild(wrapper);
+            };
+
+            activeLayers.forEach((layer, index) => {
+                const parentName = index === 0 ? 'Root' : activeLayers[index - 1].label;
+                createSlider(`edge_level_${index}`, `${parentName} -> ${layer.label}`, 180 - (index * 25));
+            });
+
+            const leafParentName = activeLayers.length > 0 ? activeLayers[activeLayers.length - 1].label : 'Root';
+            createSlider('edge_leaf', `${leafParentName} -> Opportunity (Sol#)`, 80);
+        }
+
+        function getWigglePhysics() {
+            const wiggleLevel = parseInt(document.getElementById('sliderWiggle').value, 10) / 100;
+            return {
+                solver: 'forceAtlas2Based',
+                forceAtlas2Based: {
+                    gravitationalConstant: -120,
+                    centralGravity: 0.005 + (wiggleLevel * 0.02),
+                    springConstant: 0.06 + (wiggleLevel * 0.05),
+                    springLength: 100,
+                    damping: 0.75 - (wiggleLevel * 0.5)
+                },
+                maxVelocity: 8 + (wiggleLevel * 24),
+                minVelocity: 0.4,
+                stabilization: {
+                    iterations: Math.round(220 - (wiggleLevel * 100))
+                }
+            };
+        }
+
+        function applyWiggleSetting(restabilize) {
+            if (!network) return;
+            network.setOptions({ physics: getWigglePhysics() });
+            if (restabilize) {
+                network.startSimulation();
+                network.stabilize(80);
+            }
+        }
+
+        function updateEdgeLengths(edgeType, newLength) {
+            if (!edges || edges.get().length === 0) return;
+            const updates = edges.get()
+                .filter(edge => edge.type === edgeType)
+                .map(edge => ({ id: edge.id, length: newLength }));
+            edges.update(updates);
+            if (network) {
+                network.startSimulation();
+            }
+        }
+
+        function setNodePinState(nodeIds, isPinned) {
+            if (!network || !nodeIds || nodeIds.length === 0) return;
+
+            const positions = network.getPositions(nodeIds);
+            const updates = nodeIds.map(nodeId => {
+                const currentPosition = positions[nodeId] || {};
+                return {
+                    id: nodeId,
+                    x: currentPosition.x,
+                    y: currentPosition.y,
+                    fixed: { x: isPinned, y: isPinned }
+                };
+            });
+
+            nodes.update(updates);
+            if (!isPinned) {
+                network.startSimulation();
+            }
+        }
+
+        function pinNodes(nodeIds) {
+            setNodePinState(nodeIds, true);
+        }
+
+        function unpinNodes(nodeIds) {
+            setNodePinState(nodeIds, false);
+        }
+
+        function initNetwork() {
+            const container = document.getElementById('mynetwork');
+            const data = { nodes: nodes, edges: edges };
+            const options = {
+                edges: { smooth: { type: 'continuous' } },
+                physics: getWigglePhysics(),
+                interaction: { hover: true, tooltipDelay: 200, zoomView: true }
+            };
+
+            if (network !== null) {
+                network.destroy();
+            }
+
+            network = new vis.Network(container, data, options);
+
+            network.on('click', function(params) {
+                if (params.nodes.length > 0) {
+                    showNodeDetails(params.nodes[0]);
+                } else {
+                    hideInfoPanel();
+                }
+            });
+
+            network.on('dragEnd', function(params) {
+                if (!params.nodes || params.nodes.length === 0) return;
+                pinNodes(params.nodes);
+            });
+        }
+
+        function sanitizeUrl(url) {
+            if (!url) return null;
+            try {
+                const parsed = new URL(url, window.location.href);
+                if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+                    return parsed.href;
+                }
+            } catch (err) {
+                console.warn('Invalid URL skipped', url, err);
+            }
+            return null;
+        }
+
+        function showNodeDetails(nodeId) {
+            const nodeData = nodes.get(nodeId);
+            if (!nodeData || nodeData.group !== 'leaf' || !nodeData.details) {
+                hideInfoPanel();
+                return;
+            }
+
+            const details = nodeData.details;
+            const panel = document.getElementById('infoPanel');
+            const contentDiv = document.getElementById('panelContent');
+            const agency = [details['Department/Ind.Agency'], details['Sub-Tier']].filter(Boolean).join(' - ');
+            const contactDetails = [details['PrimaryContactFullname'], details['PrimaryContactEmail']].filter(Boolean);
+            const safeLink = sanitizeUrl(details['Link']);
+
+            document.getElementById('panelTitle').textContent = details['Title'] || 'Untitled Opportunity';
+
+            let html = `
+                <div class="detail-item"><span class="detail-label">Sol #:</span><span class="detail-value">${escapeHtml(details['Sol#'] || 'N/A')}</span></div>
+                <div class="detail-item"><span class="detail-label">Agency:</span><span class="detail-value">${escapeHtml(agency || 'N/A')}</span></div>
+                <div class="detail-item"><span class="detail-label">Type:</span><span class="detail-value">${escapeHtml(details['Type'] || 'N/A')}</span></div>
+                <div class="detail-item"><span class="detail-label">Set Aside:</span><span class="detail-value">${escapeHtml(details['SetASide'] || 'None')}</span></div>
+                <div class="detail-item"><span class="detail-label">NAICS:</span><span class="detail-value">${escapeHtml(details['NaicsCode'] || 'N/A')}</span></div>
+                <div class="detail-item"><span class="detail-label">Posted:</span><span class="detail-value">${escapeHtml(cleanDate(details['PostedDate']) || 'N/A')}</span></div>
+                <div class="detail-item"><span class="detail-label">Deadline:</span><span class="detail-value">${escapeHtml(cleanDate(details['ResponseDeadLine']) || 'N/A')}</span></div>
+                <div class="detail-item"><span class="detail-label">Contact:</span><span class="detail-value">${contactDetails.length ? contactDetails.map(escapeHtml).join('<br>') : 'N/A'}</span></div>
+            `;
+
+            if (safeLink) {
+                html += `<a href="${safeLink}" target="_blank" rel="noopener noreferrer" class="action-link">View on SAM.gov</a>`;
+            }
+
+            if (details['Description']) {
+                html += `<div class="desc-box">${escapeHtml(details['Description'])}</div>`;
+            }
+
+            contentDiv.innerHTML = html;
+            panel.style.display = 'block';
+        }
+
+        function hideInfoPanel() {
+            document.getElementById('infoPanel').style.display = 'none';
+        }
+
+        function searchNode() {
+            const wrapper = document.getElementById('searchBoxWrapper');
+            if (wrapper.style.display === 'none') {
+                wrapper.style.display = 'block';
+                return;
+            }
+
+            if (!network) return;
+
+            const term = document.getElementById('searchInput').value.toLowerCase().trim();
+            if (!term) return;
+
+            const match = nodes.get().find(node =>
+                node.group === 'leaf' &&
+                (
+                    (node.details['Title'] && node.details['Title'].toLowerCase().includes(term)) ||
+                    (node.details['Sol#'] && node.details['Sol#'].toLowerCase().includes(term))
+                )
+            );
+
+            if (match) {
+                network.focus(match.id, { scale: 1.5, animation: { duration: 800 } });
+                network.selectNodes([match.id]);
+                showNodeDetails(match.id);
+            } else {
+                alert('Opportunity not found.');
+            }
+        }
+    </script>
+</body>
+</html>

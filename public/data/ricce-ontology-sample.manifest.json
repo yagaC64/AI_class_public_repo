@@ -1,0 +1,16 @@
+{
+  "dataset_profile": "example",
+  "contains_real_people": false,
+  "generated_at_utc": "2026-03-31T00:00:00Z",
+  "source_description": "Fictional sample dataset bundled with the public repo for safe demos and local onboarding.",
+  "row_count": 12,
+  "public_fields": [
+    "Name",
+    "Organization",
+    "Service Area"
+  ],
+  "notes": [
+    "The public site should stay on this sample feed unless you switch to a protected backend.",
+    "Use ./scripts/publish_public_data.sh only for local private preview output."
+  ]
+}

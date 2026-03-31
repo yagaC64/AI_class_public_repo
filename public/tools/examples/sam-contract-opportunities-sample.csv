@@ -1,0 +1,4 @@
+NoticeId,Title,Department/Ind.Agency,Sub-Tier,PostedDate,ResponseDeadLine,Type,State,NaicsCode,Active,Link,Description
+SAMPLE-SAM-001,Example Community Data Platform Support,EXAMPLE DEPARTMENT,Example Shared Services,2026-03-18,2026-04-18 17:00:00-04,Combined Synopsis/Solicitation,PR,541511,Yes,https://sam.gov/,Fictional sample contract opportunity used to test the public CSV explorer.
+SAMPLE-SAM-002,Example Mobile Health Outreach Analytics,EXAMPLE HEALTH OFFICE,Example Health Programs,2026-03-22,2026-04-10 17:00:00-04,Presolicitation,FL,541611,Yes,https://sam.gov/,Fictional sample opportunity covering analytics support for outreach operations.
+SAMPLE-SAM-003,Example Coastal Sensor Maintenance,EXAMPLE ENVIRONMENT AGENCY,Example Field Operations,2026-03-27,2026-04-21 17:00:00-04,Sources Sought,TX,334519,No,https://sam.gov/,Fictional sample opportunity covering maintenance coordination for resilience equipment.

@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<OpportunitySynopsisDetails>
+  <OpportunitySynopsisDetail_1_0>
+    <OpportunityID>SAMPLE-GRANT-001</OpportunityID>
+    <OpportunityTitle>Example Workforce AI Literacy Lab</OpportunityTitle>
+    <OpportunityNumber>EX-2026-001</OpportunityNumber>
+    <AgencyName>Example Civic Innovation Agency</AgencyName>
+    <CategoryExplanation>Education</CategoryExplanation>
+    <FundingInstrumentType>Grant</FundingInstrumentType>
+    <CostSharingOrMatchingRequirement>No</CostSharingOrMatchingRequirement>
+    <EligibleApplicants>Nonprofits with 501(c)(3) status</EligibleApplicants>
+    <PostDate>03152026</PostDate>
+    <CloseDate>04302026</CloseDate>
+    <AwardCeiling>250000</AwardCeiling>
+    <Description>Fictional sample grant used to verify the public XML explorer without shipping live bulk extracts.</Description>
+  </OpportunitySynopsisDetail_1_0>
+  <OpportunitySynopsisDetail_1_0>
+    <OpportunityID>SAMPLE-GRANT-002</OpportunityID>
+    <OpportunityTitle>Example Community Health Navigation Sprint</OpportunityTitle>
+    <OpportunityNumber>EX-2026-002</OpportunityNumber>
+    <AgencyName>Example Human Services Office</AgencyName>
+    <CategoryExplanation>Health</CategoryExplanation>
+    <FundingInstrumentType>Cooperative Agreement</FundingInstrumentType>
+    <CostSharingOrMatchingRequirement>No</CostSharingOrMatchingRequirement>
+    <EligibleApplicants>County governments, nonprofits, tribal organizations</EligibleApplicants>
+    <PostDate>03222026</PostDate>
+    <CloseDate>05012026</CloseDate>
+    <AwardCeiling>500000</AwardCeiling>
+    <Description>Fictional sample grant focused on service coordination and health outreach.</Description>
+  </OpportunitySynopsisDetail_1_0>
+  <OpportunitySynopsisDetail_1_0>
+    <OpportunityID>SAMPLE-GRANT-003</OpportunityID>
+    <OpportunityTitle>Example Coastal Resilience Data Fellowship</OpportunityTitle>
+    <OpportunityNumber>EX-2026-003</OpportunityNumber>
+    <AgencyName>Example Environmental Preparedness Bureau</AgencyName>
+    <CategoryExplanation>Environment</CategoryExplanation>
+    <FundingInstrumentType>Grant</FundingInstrumentType>
+    <CostSharingOrMatchingRequirement>Yes</CostSharingOrMatchingRequirement>
+    <EligibleApplicants>Higher education institutions and nonprofits</EligibleApplicants>
+    <PostDate>03292026</PostDate>
+    <CloseDate>05152026</CloseDate>
+    <AwardCeiling>175000</AwardCeiling>
+    <Description>Fictional sample grant for resilience planning and public-interest data collaboration.</Description>
+  </OpportunitySynopsisDetail_1_0>
+</OpportunitySynopsisDetails>

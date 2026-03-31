@@ -1,0 +1,1408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Grants.gov Opportunity Explorer</title>
+    <script type="text/javascript" src="../assets/vendor/vis-network.min.js"></script>
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: #f0f4f8;
+            overflow: hidden;
+            color: #2c3e50;
+        }
+        #mynetwork {
+            width: 100vw;
+            height: 100vh;
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+        
+        /* Side Panel Styling */
+        #controlPanel {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            width: 380px;
+            max-width: calc(100vw - 30px);
+            background: rgba(255, 255, 255, 0.95);
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            z-index: 10;
+            backdrop-filter: blur(5px);
+            border: 1px solid #dcdde1;
+            max-height: 95vh;
+            overflow-y: auto;
+        }
+        
+        #controlPanel h1 { margin: 0 0 5px 0; font-size: 1.5rem; color: #192a56; }
+        #controlPanel p.subtitle { margin: 0 0 15px 0; font-size: 0.85rem; color: #7f8fa6; }
+
+        .control-group {
+            margin-bottom: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid #f1f2f6;
+        }
+        .control-group:last-child { border-bottom: none; margin-bottom: 0; padding-bottom: 0; }
+        .control-group label { display: block; font-weight: 600; font-size: 0.85rem; margin-bottom: 5px; color: #353b48; }
+        
+        input[type="file"], input[type="date"], select, input[type="text"] {
+            width: 100%;
+            padding: 6px;
+            border: 1px solid #dcdde1;
+            border-radius: 4px;
+            box-sizing: border-box;
+            font-size: 0.85rem;
+            background: #fff;
+        }
+        
+        .date-row { display: flex; gap: 10px; }
+        .date-row div { flex: 1; }
+
+        .layer-row { margin-bottom: 5px; }
+
+        .field-label-row {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+
+        .field-label-row label {
+            flex: 1;
+            margin-bottom: 0;
+        }
+
+        .control-help {
+            margin: 0 0 10px 0;
+            font-size: 0.78rem;
+            color: #6c7a89;
+            line-height: 1.4;
+        }
+
+        .help-button {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 22px;
+            height: 22px;
+            padding: 0;
+            margin-top: 0;
+            border-radius: 999px;
+            border: 1px solid #c9deef;
+            background: #eef5fb;
+            color: #1565c0;
+            font-weight: 700;
+            cursor: pointer;
+        }
+
+        .help-button:hover {
+            background: #dcecff;
+        }
+
+        .range-caption {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            color: #7f8c8d;
+            margin-top: 4px;
+        }
+
+        .button-row {
+            display: flex;
+            gap: 8px;
+        }
+
+        .button-row button {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        .sub-control {
+            margin-top: 12px;
+        }
+
+        .sub-control:first-child {
+            margin-top: 0;
+        }
+
+        button {
+            font: inherit;
+            color: white;
+            border: none;
+            padding: 10px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            width: 100%;
+            transition: background 0.2s;
+            margin-top: 5px;
+        }
+        button.btn-primary {
+            background-color: #0097e6;
+        }
+        button.btn-primary:hover { background-color: #00a8ff; }
+        button.btn-secondary {
+            background: #eef5fb;
+            color: #1565c0;
+            border: 1px solid #c9deef;
+        }
+        button.btn-secondary:hover { background: #dcecff; }
+        button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        #dynamicSliders { margin-top: 10px; }
+        .slider-wrapper { margin-bottom: 10px; }
+        .slider-wrapper label { font-size: 0.8rem; font-weight: 600; color: #1565c0;}
+        input[type="range"] { width: 100%; cursor: pointer; }
+
+        .analysis-summary {
+            font-size: 0.8rem;
+            color: #566573;
+            line-height: 1.5;
+        }
+
+        .analysis-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .analysis-card {
+            background: #f5f7fb;
+            border: 1px solid #dfe6ee;
+            border-radius: 8px;
+            padding: 8px;
+        }
+
+        .analysis-card .summary-label {
+            display: block;
+            font-size: 0.72rem;
+            color: #718093;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+            letter-spacing: 0.03em;
+        }
+
+        .analysis-card .summary-value {
+            display: block;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #192a56;
+            line-height: 1.3;
+        }
+
+        .analysis-actions {
+            display: flex;
+            gap: 8px;
+            margin-top: 10px;
+        }
+
+        .analysis-actions button {
+            flex: 1;
+            margin-top: 0;
+        }
+
+        .histogram-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: baseline;
+            gap: 8px;
+            margin-top: 12px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #607080;
+        }
+
+        .histogram-meta {
+            font-weight: 500;
+            color: #7f8c8d;
+            text-align: right;
+        }
+
+        #overviewHistogram {
+            width: 100%;
+            height: 96px;
+            display: block;
+            margin-top: 8px;
+            border: 1px solid #dfe6ee;
+            border-radius: 8px;
+            background: linear-gradient(180deg, #f8fbff 0%, #eef5fb 100%);
+        }
+
+        .histogram-scale {
+            display: flex;
+            justify-content: space-between;
+            gap: 12px;
+            margin-top: 6px;
+            font-size: 0.72rem;
+            color: #7f8c8d;
+        }
+
+        .histogram {
+            margin-top: 8px;
+            height: 130px;
+            display: flex;
+            align-items: flex-end;
+            gap: 3px;
+            padding: 10px 8px 8px;
+            border-radius: 8px;
+            border: 1px solid #d6e4ef;
+            background: linear-gradient(180deg, #fbfdff 0%, #eef4fb 100%);
+            overflow-x: auto;
+            overflow-y: hidden;
+        }
+
+        .histogram-empty {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            font-size: 0.78rem;
+            color: #7f8c8d;
+            line-height: 1.4;
+        }
+
+        .histogram-bar {
+            flex: 0 0 10px;
+            width: auto;
+            min-width: 10px;
+            padding: 0;
+            margin-top: 0;
+            border: none;
+            border-radius: 4px 4px 0 0;
+            background: linear-gradient(180deg, #38ada9 0%, #0a7c86 100%);
+            cursor: pointer;
+            transition: transform 0.15s ease, opacity 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .histogram-bar:hover,
+        .histogram-bar:focus-visible {
+            opacity: 0.92;
+            transform: translateY(-2px);
+            outline: none;
+        }
+
+        .histogram-bar.is-selected {
+            background: linear-gradient(180deg, #f6b93b 0%, #e58e26 100%);
+            box-shadow: 0 0 0 2px #f6b93b;
+        }
+
+        .analysis-note {
+            margin: 8px 0 0 0;
+            font-size: 0.74rem;
+            color: #6c7a89;
+            line-height: 1.4;
+        }
+
+        .selection-indicator {
+            display: none;
+            margin-top: 8px;
+            padding: 8px 10px;
+            border-radius: 6px;
+            border: 1px solid #d6e4ef;
+            background: #f7faff;
+            font-size: 0.78rem;
+            color: #29405f;
+            line-height: 1.4;
+        }
+
+        /* Detail Panel Styling */
+        #infoPanel {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            width: 320px;
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            padding: 20px;
+            z-index: 10;
+            display: none;
+            backdrop-filter: blur(5px);
+            border: 1px solid #dcdde1;
+            max-height: 90vh;
+            overflow-y: auto;
+        }
+        #infoPanel h2 {
+            margin-top: 0;
+            font-size: 1.1rem;
+            color: #192a56;
+            border-bottom: 2px solid #0097e6;
+            padding-bottom: 8px;
+            word-wrap: break-word;
+        }
+        .detail-item { margin-bottom: 8px; font-size: 0.85rem; }
+        .detail-label { font-weight: bold; color: #444; display: block; }
+        .detail-value { color: #222; word-wrap: break-word; }
+        .desc-box { background: #f5f6fa; padding: 8px; border-radius: 4px; font-size: 0.8rem; max-height: 150px; overflow-y: auto; border: 1px solid #e84118; margin-top: 5px;}
+
+        .help-dialog {
+            width: min(680px, calc(100vw - 32px));
+            border: none;
+            border-radius: 12px;
+            padding: 0;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.24);
+        }
+
+        .help-dialog::backdrop {
+            background: rgba(17, 24, 39, 0.42);
+        }
+
+        .help-dialog-panel {
+            padding: 20px;
+            background: #fff;
+        }
+
+        .help-dialog-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .help-dialog-header h3 {
+            margin: 0;
+            font-size: 1rem;
+            color: #192a56;
+        }
+
+        .help-dialog-close {
+            width: auto;
+            margin-top: 0;
+            padding: 7px 10px;
+        }
+
+        .help-dialog-panel p {
+            margin: 0 0 12px;
+            font-size: 0.84rem;
+            line-height: 1.5;
+            color: #353b48;
+        }
+
+        .help-dialog-list {
+            margin: 0 0 12px 18px;
+            padding: 0;
+            color: #353b48;
+            font-size: 0.84rem;
+            line-height: 1.6;
+        }
+
+        .help-dialog-list li {
+            margin-bottom: 8px;
+        }
+
+        .help-dialog-note {
+            font-size: 0.78rem;
+            color: #6c7a89;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="controlPanel">
+        <h1>Grants_gov</h1>
+        <p class="subtitle">Opportunity Explorer</p>
+
+        <div class="control-group">
+            <div class="field-label-row">
+                <label for="xmlFileInput">1. Select XML File</label>
+                <button id="btnXmlHelp" type="button" class="help-button" aria-label="How to fetch the latest grants.gov XML" title="How to fetch the latest grants.gov XML">?</button>
+            </div>
+            <input type="file" id="xmlFileInput" accept=".xml">
+            <p class="control-help">Use the <code>?</code> for the latest grants.gov XML steps. Load the downloaded extract from your machine with this picker; do not copy raw XML into the repo. Need a harmless starter file? Use <a href="/tools/examples/grants-opportunities-sample.xml">the bundled sample XML</a>.</p>
+        </div>
+
+        <div class="control-group">
+            <label>2. File Analysis</label>
+            <div id="fileAnalysisSummary" class="analysis-summary">Load an XML file to inspect grant rows, PostDate coverage, and the available date range before filtering.</div>
+            <div id="fileAnalysisStats" class="analysis-grid"></div>
+            <div class="analysis-actions">
+                <button id="btnUseFullRange" type="button" class="btn-secondary" disabled>Use Full Range</button>
+                <button id="btnClearDates" type="button" class="btn-secondary" disabled>Clear Dates</button>
+            </div>
+            <div class="histogram-header">
+                <span>Bird's Eye Grant Posting Coverage</span>
+                <span id="overviewMeta" class="histogram-meta"></span>
+            </div>
+            <svg id="overviewHistogram" viewBox="0 0 320 96" preserveAspectRatio="none" role="img" aria-label="Bird's eye grant posting coverage overview"></svg>
+            <div class="histogram-scale">
+                <span id="overviewStartLabel">Earliest post date: N/A</span>
+                <span id="overviewEndLabel">Latest post date: N/A</span>
+            </div>
+            <p id="overviewNote" class="analysis-note">Blue bars follow the current date filter. Use the detailed bars below to focus a single posting day.</p>
+            <div class="histogram-header">
+                <span>Grant Rows Per Posting Day</span>
+                <span id="histogramMeta" class="histogram-meta"></span>
+            </div>
+            <div id="fileHistogram" class="histogram">
+                <div class="histogram-empty">No XML analyzed yet.</div>
+            </div>
+            <div class="histogram-scale">
+                <span id="histogramStartLabel">Min date</span>
+                <span id="histogramEndLabel">Max date</span>
+            </div>
+            <div id="selectedDayCount" class="selection-indicator"></div>
+            <p class="control-help">Click any bar to set both Start and End to that exact day. Click the same bar again to clear it.</p>
+        </div>
+
+        <div class="control-group">
+            <label>3. Filter by Post Date</label>
+            <div class="date-row">
+                <div>
+                    <label style="font-size: 0.75rem;">Start</label>
+                    <input type="date" id="dateStart">
+                </div>
+                <div>
+                    <label style="font-size: 0.75rem;">End</label>
+                    <input type="date" id="dateEnd">
+                </div>
+            </div>
+        </div>
+
+        <div class="control-group">
+            <label>4. Clustering Hierarchy (Inner to Outer)</label>
+            <div class="layer-row"><select id="layer1"></select></div>
+            <div class="layer-row"><select id="layer2"></select></div>
+            <div class="layer-row"><select id="layer3"></select></div>
+            <div class="layer-row"><select id="layer4"></select></div>
+            <div class="layer-row"><select id="layer5"></select></div>
+        </div>
+
+        <button id="btnGenerate" class="btn-primary">Generate Graph</button>
+        <button id="btnSearch" type="button" class="btn-secondary" style="margin-top:10px; padding: 5px; font-size:0.8rem;">Search Opportunity Title</button>
+        <div style="display:none;" id="searchBoxWrapper">
+            <input type="text" id="searchInput" placeholder="Enter keyword..." style="margin-top:5px;">
+        </div>
+
+        <div class="control-group" id="layoutControls" style="display: none; margin-top:15px; padding-top:15px; border-top: 2px solid #0097e6;">
+            <label>5. Layout Controls</label>
+            <div id="dynamicSliders"></div>
+            <div class="sub-control">
+                <label for="sliderWiggle">Opening Wiggle</label>
+                <input type="range" id="sliderWiggle" min="0" max="100" value="20">
+                <div class="range-caption">
+                    <span>Steady</span>
+                    <span>Wiggly</span>
+                </div>
+            </div>
+            <div class="sub-control">
+                <label>Node Pinning</label>
+                <p class="control-help">Drag any node and release it to pin it in place. Use the buttons below to free pinned nodes again.</p>
+                <div class="button-row">
+                    <button id="btnUnpinSelected" type="button" class="btn-secondary">Unpin Selected</button>
+                    <button id="btnUnpinAll" type="button" class="btn-secondary">Unpin All</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="mynetwork"></div>
+
+    <div id="infoPanel">
+        <h2 id="panelTitle">Grant Details</h2>
+        <div id="panelContent"></div>
+    </div>
+
+    <dialog id="xmlHelpDialog" class="help-dialog" aria-labelledby="xmlHelpTitle">
+        <div class="help-dialog-panel">
+            <div class="help-dialog-header">
+                <h3 id="xmlHelpTitle">How to fetch the latest grants.gov XML</h3>
+                <button id="btnXmlHelpClose" type="button" class="btn-secondary help-dialog-close">Close</button>
+            </div>
+            <p>Use the latest public grants.gov XML extract, then load that file here with the picker above.</p>
+            <ol class="help-dialog-list">
+                <li><a href="https://www.grants.gov/" target="_blank" rel="noopener noreferrer">Go to https://www.grants.gov/</a></li>
+                <li><a href="https://www.grants.gov/xml-extract" target="_blank" rel="noopener noreferrer">Go to https://www.grants.gov/xml-extract</a></li>
+                <li>Select the latest dated <code>.xml</code> file.</li>
+            </ol>
+            <p class="help-dialog-note">Each link opens in a new tab so this session stays in place. Keep the XML outside the repo and load it directly from Downloads or another local folder.</p>
+        </div>
+    </dialog>
+
+    <script>
+        // Available fields for clustering
+        const schemaFields = [
+            { value: 'none', text: '-- None --' },
+            { value: 'AgencyName', text: 'Agency Name' },
+            { value: 'CategoryExplanation', text: 'Category Explanation' },
+            { value: 'FundingInstrumentType', text: 'Funding Instrument Type' },
+            { value: 'CostSharingOrMatchingRequirement', text: 'Cost Sharing Requirement' },
+            { value: 'EligibleApplicants', text: 'Eligible Applicants' }
+        ];
+
+        let network = null;
+        const nodes = new vis.DataSet();
+        const edges = new vis.DataSet();
+        let allGrants = [];
+        let analysisSnapshot = null;
+        let isFileLoading = false;
+        const defaultSliderValues = {
+            wiggle: 20
+        };
+
+        document.addEventListener('DOMContentLoaded', function() {
+            for (let i = 1; i <= 5; i++) {
+                const sel = document.getElementById(`layer${i}`);
+                schemaFields.forEach(f => {
+                    const opt = document.createElement('option');
+                    opt.value = f.value;
+                    opt.textContent = f.text;
+                    sel.appendChild(opt);
+                });
+                // Default first two layers to make it look good instantly
+                if (i === 1) sel.value = 'AgencyName';
+                if (i === 2) sel.value = 'CategoryExplanation';
+            }
+
+            document.getElementById('btnGenerate').disabled = true;
+            document.getElementById('btnSearch').disabled = true;
+            document.getElementById('xmlFileInput').addEventListener('change', loadSelectedFile);
+            document.getElementById('btnXmlHelp').addEventListener('click', openXmlHelpDialog);
+            document.getElementById('btnXmlHelpClose').addEventListener('click', closeXmlHelpDialog);
+            document.getElementById('btnGenerate').addEventListener('click', processAndGraph);
+            document.getElementById('btnUseFullRange').addEventListener('click', applyFullDateRange);
+            document.getElementById('btnClearDates').addEventListener('click', clearDateFilters);
+            document.getElementById('btnSearch').addEventListener('click', searchNode);
+            document.getElementById('searchInput').addEventListener('keydown', function(event) {
+                if (event.key === 'Enter') {
+                    searchNode();
+                }
+            });
+            document.getElementById('dateStart').addEventListener('input', function() {
+                syncDateInputs('dateStart');
+            });
+            document.getElementById('dateEnd').addEventListener('input', function() {
+                syncDateInputs('dateEnd');
+            });
+            document.getElementById('sliderWiggle').value = defaultSliderValues.wiggle;
+            document.getElementById('sliderWiggle').addEventListener('input', function() {
+                applyWiggleSetting(false);
+            });
+            document.getElementById('sliderWiggle').addEventListener('change', function() {
+                applyWiggleSetting(true);
+            });
+            document.getElementById('btnUnpinSelected').addEventListener('click', function() {
+                const selectedNodeIds = network ? network.getSelectedNodes() : [];
+                if (!selectedNodeIds.length) {
+                    alert('Select one or more nodes to unpin.');
+                    return;
+                }
+                unpinNodes(selectedNodeIds);
+            });
+            document.getElementById('btnUnpinAll').addEventListener('click', function() {
+                unpinNodes(nodes.getIds());
+            });
+            bindDialogBackdropClose('xmlHelpDialog', closeXmlHelpDialog);
+
+            resetFileAnalysis('Load an XML file to inspect grant rows, PostDate coverage, and the available date range before filtering.');
+        });
+
+        function openDialog(dialogId) {
+            const dialog = document.getElementById(dialogId);
+            if (typeof dialog.showModal === 'function') {
+                dialog.showModal();
+            } else {
+                dialog.setAttribute('open', 'open');
+            }
+        }
+
+        function closeDialog(dialogId) {
+            const dialog = document.getElementById(dialogId);
+            if (typeof dialog.close === 'function') {
+                dialog.close();
+            } else {
+                dialog.removeAttribute('open');
+            }
+        }
+
+        function bindDialogBackdropClose(dialogId, closeHandler) {
+            document.getElementById(dialogId).addEventListener('click', function(event) {
+                const rect = this.getBoundingClientRect();
+                const clickedOutside = event.clientX < rect.left || event.clientX > rect.right || event.clientY < rect.top || event.clientY > rect.bottom;
+                if (clickedOutside) {
+                    closeHandler();
+                }
+            });
+        }
+
+        function openXmlHelpDialog() {
+            openDialog('xmlHelpDialog');
+        }
+
+        function closeXmlHelpDialog() {
+            closeDialog('xmlHelpDialog');
+        }
+
+        function parseXmlDate(dateStr) {
+            if (!dateStr || !/^\d{8}$/.test(dateStr)) return null;
+            const m = dateStr.substring(0, 2);
+            const d = dateStr.substring(2, 4);
+            const y = dateStr.substring(4, 8);
+            const isoDate = `${y}-${m}-${d}`;
+            const parsedDate = new Date(`${isoDate}T00:00:00Z`);
+            if (Number.isNaN(parsedDate.getTime()) || parsedDate.toISOString().slice(0, 10) !== isoDate) {
+                return null;
+            }
+            return isoDate;
+        }
+
+        function getXmlTagContent(xmlNode, tagName) {
+            const el = xmlNode.getElementsByTagNameNS('*', tagName)[0] || xmlNode.getElementsByTagName(tagName)[0];
+            return el ? el.textContent.trim() : 'Unknown/N/A';
+        }
+
+        function parseGrantsXml(xmlText) {
+            const parser = new DOMParser();
+            const xmlDoc = parser.parseFromString(xmlText, 'application/xml');
+            const parseErrors = xmlDoc.getElementsByTagName('parsererror');
+            if (parseErrors.length > 0) {
+                throw new Error('The selected file could not be parsed as valid XML.');
+            }
+
+            const opportunities = xmlDoc.getElementsByTagNameNS('*', 'OpportunitySynopsisDetail_1_0').length
+                ? xmlDoc.getElementsByTagNameNS('*', 'OpportunitySynopsisDetail_1_0')
+                : xmlDoc.getElementsByTagName('OpportunitySynopsisDetail_1_0');
+            if (opportunities.length === 0) {
+                throw new Error('Could not find <OpportunitySynopsisDetail_1_0> tags. Please check the XML schema.');
+            }
+
+            const grants = [];
+            for (let i = 0; i < opportunities.length; i++) {
+                const opp = opportunities[i];
+                grants.push({
+                    OpportunityID: getXmlTagContent(opp, 'OpportunityID'),
+                    OpportunityTitle: getXmlTagContent(opp, 'OpportunityTitle'),
+                    OpportunityNumber: getXmlTagContent(opp, 'OpportunityNumber'),
+                    AgencyName: getXmlTagContent(opp, 'AgencyName'),
+                    CategoryExplanation: getXmlTagContent(opp, 'CategoryExplanation'),
+                    FundingInstrumentType: getXmlTagContent(opp, 'FundingInstrumentType'),
+                    CostSharingOrMatchingRequirement: getXmlTagContent(opp, 'CostSharingOrMatchingRequirement'),
+                    EligibleApplicants: getXmlTagContent(opp, 'EligibleApplicants'),
+                    PostDate: parseXmlDate(getXmlTagContent(opp, 'PostDate')),
+                    CloseDate: parseXmlDate(getXmlTagContent(opp, 'CloseDate')),
+                    AwardCeiling: getXmlTagContent(opp, 'AwardCeiling'),
+                    Description: getXmlTagContent(opp, 'Description')
+                });
+            }
+            return grants;
+        }
+
+        function loadSelectedFile() {
+            const fileInput = document.getElementById('xmlFileInput');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                allGrants = [];
+                analysisSnapshot = null;
+                clearCurrentGraph();
+                resetDateInputs();
+                resetFileAnalysis('Load an XML file to inspect grant rows, PostDate coverage, and the available date range before filtering.');
+                document.getElementById('btnGenerate').disabled = true;
+                return;
+            }
+
+            isFileLoading = true;
+            allGrants = [];
+            analysisSnapshot = null;
+            document.getElementById('btnGenerate').disabled = true;
+            resetDateInputs();
+            resetFileAnalysis(`Analyzing ${file.name}...`);
+            clearCurrentGraph();
+
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                try {
+                    allGrants = parseGrantsXml(event.target.result);
+                    analysisSnapshot = buildFileAnalysis(allGrants);
+                    applyAnalysisToFilters(analysisSnapshot);
+                    renderFileAnalysis(file.name, analysisSnapshot);
+                    document.getElementById('btnGenerate').disabled = allGrants.length === 0;
+                } catch (error) {
+                    allGrants = [];
+                    analysisSnapshot = null;
+                    resetDateInputs();
+                    resetFileAnalysis(error.message);
+                    alert(error.message);
+                } finally {
+                    isFileLoading = false;
+                }
+            };
+            reader.onerror = function() {
+                allGrants = [];
+                analysisSnapshot = null;
+                isFileLoading = false;
+                resetDateInputs();
+                resetFileAnalysis(`Could not read ${file.name}.`);
+                alert(`Could not read ${file.name}.`);
+            };
+            reader.readAsText(file);
+        }
+
+        function buildFileAnalysis(grants) {
+            const countsByDate = new Map();
+            let datedRows = 0;
+
+            grants.forEach(grant => {
+                if (!grant.PostDate) return;
+                datedRows += 1;
+                countsByDate.set(grant.PostDate, (countsByDate.get(grant.PostDate) || 0) + 1);
+            });
+
+            const sortedDates = Array.from(countsByDate.keys()).sort();
+            if (!sortedDates.length) {
+                return {
+                    totalRows: grants.length,
+                    datedRows: 0,
+                    undatedRows: grants.length,
+                    minDate: '',
+                    maxDate: '',
+                    histogramPoints: [],
+                    activeDayPoints: [],
+                    activeDays: 0,
+                    busiestDay: null,
+                    maxDailyCount: 0
+                };
+            }
+
+            const minDate = sortedDates[0];
+            const maxDate = sortedDates[sortedDates.length - 1];
+            const histogramPoints = [];
+            const activeDayPoints = sortedDates.map(date => ({ date: date, count: countsByDate.get(date) || 0 }));
+            let peakCount = 0;
+            let peakDate = minDate;
+
+            for (let cursor = minDate; cursor <= maxDate; cursor = addDays(cursor, 1)) {
+                const count = countsByDate.get(cursor) || 0;
+                histogramPoints.push({ date: cursor, count: count });
+                if (count > peakCount) {
+                    peakCount = count;
+                    peakDate = cursor;
+                }
+            }
+
+            return {
+                totalRows: grants.length,
+                datedRows: datedRows,
+                undatedRows: grants.length - datedRows,
+                minDate: minDate,
+                maxDate: maxDate,
+                histogramPoints: histogramPoints,
+                activeDayPoints: activeDayPoints,
+                activeDays: activeDayPoints.length,
+                busiestDay: peakCount > 0 ? { date: peakDate, count: peakCount } : null,
+                maxDailyCount: peakCount
+            };
+        }
+
+        function addDays(isoDate, days) {
+            const date = new Date(`${isoDate}T00:00:00Z`);
+            date.setUTCDate(date.getUTCDate() + days);
+            return date.toISOString().slice(0, 10);
+        }
+
+        function formatDisplayDate(isoDate) {
+            if (!isoDate) return 'N/A';
+            return new Date(`${isoDate}T00:00:00Z`).toLocaleDateString(undefined, {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                timeZone: 'UTC'
+            });
+        }
+
+        function formatCount(value) {
+            return Number(value || 0).toLocaleString();
+        }
+
+        function renderAnalysisCard(label, value) {
+            return `
+                <div class="analysis-card">
+                    <span class="summary-label">${escapeHtml(label)}</span>
+                    <span class="summary-value">${escapeHtml(value)}</span>
+                </div>
+            `;
+        }
+
+        function resetFileAnalysis(summaryText) {
+            document.getElementById('fileAnalysisSummary').textContent = summaryText;
+            document.getElementById('fileAnalysisStats').innerHTML = '';
+            document.getElementById('overviewHistogram').innerHTML = '<text x="160" y="52" text-anchor="middle" font-size="12" fill="#7f8c8d">No XML analyzed yet.</text>';
+            document.getElementById('overviewMeta').textContent = '';
+            document.getElementById('overviewStartLabel').textContent = 'Earliest post date: N/A';
+            document.getElementById('overviewEndLabel').textContent = 'Latest post date: N/A';
+            document.getElementById('fileHistogram').innerHTML = '<div class="histogram-empty">No XML analyzed yet.</div>';
+            document.getElementById('histogramMeta').textContent = '';
+            document.getElementById('histogramStartLabel').textContent = 'Min date';
+            document.getElementById('histogramEndLabel').textContent = 'Max date';
+            document.getElementById('btnUseFullRange').disabled = true;
+            document.getElementById('btnClearDates').disabled = true;
+            document.getElementById('selectedDayCount').style.display = 'none';
+            document.getElementById('selectedDayCount').textContent = '';
+        }
+
+        function renderFileAnalysis(fileName, analysis) {
+            if (!analysis.totalRows) {
+                resetFileAnalysis('The selected XML did not contain any usable grant rows.');
+                return;
+            }
+
+            const missingOrInvalid = analysis.undatedRows;
+            document.getElementById('fileAnalysisSummary').textContent =
+                `Loaded ${fileName}. ${formatCount(analysis.totalRows)} grant row(s) available. ${formatCount(analysis.datedRows)} include PostDate; ${formatCount(missingOrInvalid)} are missing or invalid.`;
+
+            document.getElementById('fileAnalysisStats').innerHTML = [
+                renderAnalysisCard('Grant rows', formatCount(analysis.totalRows)),
+                renderAnalysisCard('Rows with PostDate', formatCount(analysis.datedRows)),
+                renderAnalysisCard('Missing / invalid PostDate', formatCount(missingOrInvalid)),
+                renderAnalysisCard('Days with postings', formatCount(analysis.activeDays)),
+                renderAnalysisCard(
+                    'Date range',
+                    analysis.minDate && analysis.maxDate
+                        ? `${formatDisplayDate(analysis.minDate)} -> ${formatDisplayDate(analysis.maxDate)}`
+                        : 'Not available'
+                ),
+                renderAnalysisCard(
+                    'Busiest day',
+                    analysis.busiestDay
+                        ? `${formatDisplayDate(analysis.busiestDay.date)} (${formatCount(analysis.busiestDay.count)})`
+                        : 'Not available'
+                )
+            ].join('');
+
+            document.getElementById('btnUseFullRange').disabled = !(analysis.minDate && analysis.maxDate);
+            document.getElementById('btnClearDates').disabled = false;
+
+            renderOverviewHistogram(analysis);
+            renderDetailedHistogram(analysis);
+        }
+
+        function renderOverviewHistogram(analysis) {
+            const svg = document.getElementById('overviewHistogram');
+            if (!analysis.histogramPoints.length) {
+                svg.innerHTML = '<text x="160" y="52" text-anchor="middle" font-size="12" fill="#7f8c8d">No valid PostDate values found.</text>';
+                document.getElementById('overviewMeta').textContent = '';
+                document.getElementById('overviewStartLabel').textContent = 'Earliest post date: N/A';
+                document.getElementById('overviewEndLabel').textContent = 'Latest post date: N/A';
+                return;
+            }
+
+            const width = 320;
+            const height = 96;
+            const chartTop = 6;
+            const chartBottom = 82;
+            const chartHeight = chartBottom - chartTop;
+            const pointCount = analysis.histogramPoints.length;
+            const step = width / pointCount;
+            const barWidth = Math.max(step - 0.4, 0.6);
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+
+            const bars = analysis.histogramPoints.map((point, index) => {
+                const normalizedHeight = analysis.maxDailyCount === 0 ? 0 : (point.count / analysis.maxDailyCount) * chartHeight;
+                const barHeight = point.count === 0 ? 1.2 : Math.max(normalizedHeight, 1.2);
+                const x = index * step;
+                const y = chartBottom - barHeight;
+                const isSelected = (!startDate || point.date >= startDate) && (!endDate || point.date <= endDate);
+                const fill = isSelected ? '#1565c0' : '#c7d3df';
+                const opacity = point.count === 0 ? 0.22 : 0.94;
+
+                return `
+                    <rect x="${x.toFixed(2)}" y="${y.toFixed(2)}" width="${barWidth.toFixed(2)}" height="${barHeight.toFixed(2)}" rx="1.3" fill="${fill}" opacity="${opacity}">
+                        <title>${point.date}: ${point.count} grant rows</title>
+                    </rect>
+                `;
+            }).join('');
+
+            svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+            svg.innerHTML = `
+                <line x1="0" y1="${chartBottom}" x2="${width}" y2="${chartBottom}" stroke="#dfe6ee" stroke-width="1" />
+                ${bars}
+            `;
+
+            document.getElementById('overviewStartLabel').textContent = `Earliest post date: ${formatDisplayDate(analysis.minDate)}`;
+            document.getElementById('overviewEndLabel').textContent = `Latest post date: ${formatDisplayDate(analysis.maxDate)}`;
+
+            if (startDate && endDate) {
+                document.getElementById('overviewMeta').textContent = startDate === endDate
+                    ? `Focused on ${formatDisplayDate(startDate)}`
+                    : `Highlighting ${formatDisplayDate(startDate)} -> ${formatDisplayDate(endDate)}`;
+            } else if (startDate) {
+                document.getElementById('overviewMeta').textContent = `From ${formatDisplayDate(startDate)}`;
+            } else if (endDate) {
+                document.getElementById('overviewMeta').textContent = `Through ${formatDisplayDate(endDate)}`;
+            } else {
+                document.getElementById('overviewMeta').textContent = 'Full file range';
+            }
+        }
+
+        function renderDetailedHistogram(analysis) {
+            const histogram = document.getElementById('fileHistogram');
+            histogram.innerHTML = '';
+
+            if (!analysis.activeDayPoints.length) {
+                histogram.innerHTML = '<div class="histogram-empty">No valid PostDate values were found in this XML file.</div>';
+                document.getElementById('histogramMeta').textContent = '';
+                document.getElementById('histogramStartLabel').textContent = 'Min date';
+                document.getElementById('histogramEndLabel').textContent = 'Max date';
+                document.getElementById('selectedDayCount').style.display = 'none';
+                document.getElementById('selectedDayCount').textContent = '';
+                return;
+            }
+
+            document.getElementById('histogramMeta').textContent = `Peak ${formatCount(analysis.maxDailyCount)} grant row(s)`;
+            document.getElementById('histogramStartLabel').textContent = analysis.minDate;
+            document.getElementById('histogramEndLabel').textContent = analysis.maxDate;
+
+            const fragment = document.createDocumentFragment();
+            analysis.activeDayPoints.forEach(point => {
+                const bar = document.createElement('button');
+                const heightRatio = analysis.maxDailyCount ? point.count / analysis.maxDailyCount : 0;
+                bar.type = 'button';
+                bar.className = 'histogram-bar';
+                bar.style.height = `${Math.max(12, Math.round(heightRatio * 110))}px`;
+                bar.title = `${point.date}: ${formatCount(point.count)} grant row(s)`;
+                bar.setAttribute('data-date', point.date);
+                bar.setAttribute('aria-label', `${point.date}: ${formatCount(point.count)} grant rows`);
+                bar.addEventListener('click', function() {
+                    applySingleDayFilter(point.date);
+                });
+                fragment.appendChild(bar);
+            });
+            histogram.appendChild(fragment);
+            syncHistogramSelection();
+        }
+
+        function applySingleDayFilter(date) {
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+
+            if (startDate === date && endDate === date) {
+                clearDateFilters();
+                return;
+            }
+
+            document.getElementById('dateStart').value = date;
+            document.getElementById('dateEnd').value = date;
+            syncDateInputs();
+        }
+
+        function applyFullDateRange() {
+            if (!analysisSnapshot || !analysisSnapshot.minDate || !analysisSnapshot.maxDate) return;
+            document.getElementById('dateStart').value = analysisSnapshot.minDate;
+            document.getElementById('dateEnd').value = analysisSnapshot.maxDate;
+            syncDateInputs();
+        }
+
+        function applyAnalysisToFilters(analysis) {
+            const startInput = document.getElementById('dateStart');
+            const endInput = document.getElementById('dateEnd');
+
+            if (!analysis || !analysis.minDate || !analysis.maxDate) {
+                clearDateFilters();
+                return;
+            }
+
+            startInput.min = analysis.minDate;
+            startInput.max = analysis.maxDate;
+            endInput.min = analysis.minDate;
+            endInput.max = analysis.maxDate;
+
+            if (startInput.value && startInput.value < analysis.minDate) {
+                startInput.value = analysis.minDate;
+            }
+            if (endInput.value && endInput.value > analysis.maxDate) {
+                endInput.value = analysis.maxDate;
+            }
+        }
+
+        function resetDateInputs() {
+            const startInput = document.getElementById('dateStart');
+            const endInput = document.getElementById('dateEnd');
+            startInput.value = '';
+            endInput.value = '';
+            startInput.removeAttribute('min');
+            startInput.removeAttribute('max');
+            endInput.removeAttribute('min');
+            endInput.removeAttribute('max');
+        }
+
+        function clearDateFilters() {
+            document.getElementById('dateStart').value = '';
+            document.getElementById('dateEnd').value = '';
+            syncDateInputs();
+        }
+
+        function syncDateInputs(changedInputId) {
+            const startInput = document.getElementById('dateStart');
+            const endInput = document.getElementById('dateEnd');
+
+            if (startInput.value && endInput.value && startInput.value > endInput.value) {
+                if (changedInputId === 'dateStart') {
+                    endInput.value = startInput.value;
+                } else {
+                    startInput.value = endInput.value;
+                }
+            }
+
+            if (analysisSnapshot) {
+                renderOverviewHistogram(analysisSnapshot);
+            }
+            syncHistogramSelection();
+        }
+
+        function syncHistogramSelection() {
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+
+            document.querySelectorAll('.histogram-bar').forEach(bar => {
+                const isSelected = startDate && endDate && startDate === endDate && bar.getAttribute('data-date') === startDate;
+                bar.classList.toggle('is-selected', isSelected);
+            });
+
+            updateSelectedDayIndicator(startDate, endDate);
+        }
+
+        function updateSelectedDayIndicator(startDate, endDate) {
+            const indicator = document.getElementById('selectedDayCount');
+            if (!analysisSnapshot || !startDate || !endDate || startDate !== endDate) {
+                indicator.style.display = 'none';
+                indicator.textContent = '';
+                return;
+            }
+
+            const selectedEntry = analysisSnapshot.activeDayPoints.find(point => point.date === startDate);
+            const rowCount = selectedEntry ? selectedEntry.count : 0;
+            indicator.textContent = `${startDate}: ${formatCount(rowCount)} grant row(s) in the loaded file. Click the same bar again to clear.`;
+            indicator.style.display = 'block';
+        }
+
+        function processAndGraph() {
+            if (isFileLoading) {
+                alert('The XML file is still being analyzed. Please wait a moment and try again.');
+                return;
+            }
+
+            if (allGrants.length === 0) {
+                alert('Please select an XML file first.');
+                return;
+            }
+
+            buildHierarchy();
+        }
+
+        function clearCurrentGraph() {
+            nodes.clear();
+            edges.clear();
+            document.getElementById('layoutControls').style.display = 'none';
+            document.getElementById('infoPanel').style.display = 'none';
+            document.getElementById('btnSearch').disabled = true;
+            document.getElementById('searchBoxWrapper').style.display = 'none';
+            document.getElementById('searchInput').value = '';
+        }
+
+        function buildHierarchy() {
+            const startDate = document.getElementById('dateStart').value;
+            const endDate = document.getElementById('dateEnd').value;
+            const filteredGrants = allGrants.filter(g => {
+                if (!g.PostDate) return false;
+                if (startDate && g.PostDate < startDate) return false;
+                if (endDate && g.PostDate > endDate) return false;
+                return true;
+            });
+
+            if (filteredGrants.length === 0) {
+                alert('No grants found for the selected date range.');
+                return;
+            }
+
+            nodes.clear();
+            edges.clear();
+            document.getElementById('infoPanel').style.display = 'none';
+
+            const activeLayers = [];
+            for (let i = 1; i <= 5; i++) {
+                const val = document.getElementById(`layer${i}`).value;
+                if (val !== 'none') {
+                    activeLayers.push({
+                        id: `layer${i}`,
+                        field: val,
+                        label: schemaFields.find(x => x.value === val).text
+                    });
+                }
+            }
+
+            nodes.add({ id: 'root', label: 'Grants.gov\nOpportunities', shape: 'star', size: 30, color: '#192a56', font: {color: '#fff'} });
+
+            const addedNodes = new Set();
+            addedNodes.add('root');
+
+            filteredGrants.forEach(grant => {
+                let parentId = 'root';
+
+                activeLayers.forEach((layer, index) => {
+                    const nodeValue = grant[layer.field] || 'N/A';
+                    const nodeId = `l${index}_${parentId}_${nodeValue}`.replace(/[^a-zA-Z0-9_]/g, '_');
+
+                    if (!addedNodes.has(nodeId)) {
+                        const colors = ['#e1b12c', '#44bd32', '#0097e6', '#8c7ae6', '#e84118'];
+                        nodes.add({
+                            id: nodeId,
+                            label: nodeValue.substring(0, 30) + (nodeValue.length > 30 ? '...' : ''),
+                            shape: 'box',
+                            color: { background: colors[index % colors.length], border: '#ffffff' },
+                            font: { color: '#ffffff', size: 14 - index }
+                        });
+                        addedNodes.add(nodeId);
+                    }
+
+                    const edgeId = `e_${parentId}_${nodeId}`;
+                    if (!edges.get(edgeId)) {
+                        edges.add({
+                            id: edgeId,
+                            from: parentId,
+                            to: nodeId,
+                            type: `edge_level_${index}`,
+                            length: 150 - (index * 20),
+                            color: { opacity: 0.6 }
+                        });
+                    }
+                    parentId = nodeId;
+                });
+
+                const leafId = `grant_${grant.OpportunityID}`;
+                if (!addedNodes.has(leafId)) {
+                    nodes.add({
+                        id: leafId,
+                        label: grant.OpportunityID,
+                        group: 'leaf',
+                        shape: 'dot',
+                        size: 8,
+                        color: { background: '#e84118', border: '#c23616' },
+                        title: grant.OpportunityTitle,
+                        details: grant
+                    });
+                    addedNodes.add(leafId);
+                    
+                    edges.add({
+                        id: `e_${parentId}_${leafId}`,
+                        from: parentId,
+                        to: leafId,
+                        type: `edge_leaf`,
+                        length: 80,
+                        color: { opacity: 0.4 }
+                    });
+                }
+            });
+
+            generateSliders(activeLayers);
+            initNetwork();
+        }
+
+        function generateSliders(activeLayers) {
+            const containerDiv = document.getElementById('layoutControls');
+            const slidersDiv = document.getElementById('dynamicSliders');
+            slidersDiv.innerHTML = '';
+            containerDiv.style.display = 'block';
+
+            const createSlider = (edgeType, labelText, defaultLength) => {
+                const wrapper = document.createElement('div');
+                wrapper.className = 'slider-wrapper';
+                
+                const label = document.createElement('label');
+                label.textContent = labelText;
+                
+                const slider = document.createElement('input');
+                slider.type = 'range';
+                slider.min = '20';
+                slider.max = '400';
+                slider.value = String(defaultLength);
+                
+                slider.addEventListener('input', function() {
+                    updateEdgeLengths(edgeType, parseInt(this.value, 10));
+                });
+
+                wrapper.appendChild(label);
+                wrapper.appendChild(slider);
+                slidersDiv.appendChild(wrapper);
+            };
+
+            activeLayers.forEach((layer, index) => {
+                const parentName = index === 0 ? 'Root' : activeLayers[index - 1].label;
+                createSlider(`edge_level_${index}`, `${parentName} → ${layer.label}`, 150 - (index * 20));
+            });
+
+            const leafParentName = activeLayers.length > 0 ? activeLayers[activeLayers.length - 1].label : 'Root';
+            createSlider(`edge_leaf`, `${leafParentName} → Opportunity (Leaf)`, 80);
+        }
+
+        function updateEdgeLengths(type, newLength) {
+            if (!edges || edges.get().length === 0) return;
+            const updates = edges.get()
+                .filter(edge => edge.type === type)
+                .map(edge => ({ id: edge.id, length: newLength }));
+            edges.update(updates);
+            if (network) {
+                network.startSimulation();
+            }
+        }
+
+        function getWigglePhysics() {
+            const wiggleLevel = parseInt(document.getElementById('sliderWiggle').value, 10) / 100;
+            return {
+                solver: 'forceAtlas2Based',
+                forceAtlas2Based: {
+                    gravitationalConstant: -150,
+                    centralGravity: 0.01 + (wiggleLevel * 0.015),
+                    springConstant: 0.05 + (wiggleLevel * 0.05),
+                    springLength: 100,
+                    damping: 0.82 - (wiggleLevel * 0.62)
+                },
+                maxVelocity: 8 + (wiggleLevel * 24),
+                minVelocity: 0.4,
+                stabilization: {
+                    iterations: Math.round(260 - (wiggleLevel * 120))
+                }
+            };
+        }
+
+        function applyWiggleSetting(restabilize) {
+            if (!network) return;
+            network.setOptions({ physics: getWigglePhysics() });
+            if (restabilize) {
+                network.startSimulation();
+                network.stabilize(80);
+            }
+        }
+
+        function setNodePinState(nodeIds, isPinned) {
+            if (!network || !nodeIds || nodeIds.length === 0) return;
+            const positions = network.getPositions(nodeIds);
+            const updates = nodeIds.map(nodeId => {
+                const currentPosition = positions[nodeId] || {};
+                return {
+                    id: nodeId,
+                    x: currentPosition.x,
+                    y: currentPosition.y,
+                    fixed: { x: isPinned, y: isPinned }
+                };
+            });
+            nodes.update(updates);
+            if (!isPinned) {
+                network.startSimulation();
+            }
+        }
+
+        function pinNodes(nodeIds) {
+            setNodePinState(nodeIds, true);
+        }
+
+        function unpinNodes(nodeIds) {
+            setNodePinState(nodeIds, false);
+        }
+
+        function initNetwork() {
+            const container = document.getElementById('mynetwork');
+            const data = { nodes: nodes, edges: edges };
+            const options = {
+                edges: { smooth: { type: 'continuous' } },
+                physics: getWigglePhysics(),
+                interaction: { hover: true, tooltipDelay: 200, zoomView: true }
+            };
+
+            if(network !== null) { network.destroy(); }
+            network = new vis.Network(container, data, options);
+            document.getElementById('btnSearch').disabled = false;
+
+            network.on("click", function (params) {
+                const panel = document.getElementById('infoPanel');
+                if (params.nodes.length > 0) {
+                    const nodeId = params.nodes[0];
+                    const nodeData = nodes.get(nodeId);
+                    
+                    if (nodeData && nodeData.group === 'leaf' && nodeData.details) {
+                        const d = nodeData.details;
+                        const contentDiv = document.getElementById('panelContent');
+                        document.getElementById('panelTitle').textContent = d.OpportunityTitle;
+                        
+                        const html = `
+                            <div class="detail-item"><span class="detail-label">Opportunity ID:</span><span class="detail-value">${escapeHtml(d.OpportunityID)}</span></div>
+                            <div class="detail-item"><span class="detail-label">Opportunity Number:</span><span class="detail-value">${escapeHtml(d.OpportunityNumber)}</span></div>
+                            <div class="detail-item"><span class="detail-label">Agency:</span><span class="detail-value">${escapeHtml(d.AgencyName)}</span></div>
+                            <div class="detail-item"><span class="detail-label">Category:</span><span class="detail-value">${escapeHtml(d.CategoryExplanation)}</span></div>
+                            <div class="detail-item"><span class="detail-label">Dates:</span><span class="detail-value">Post: ${escapeHtml(d.PostDate || 'Unknown/N/A')} | Close: ${escapeHtml(d.CloseDate || 'Unknown/N/A')}</span></div>
+                            <div class="detail-item"><span class="detail-label">Funding Limit:</span><span class="detail-value">${escapeHtml(d.AwardCeiling)}</span></div>
+                            <div class="detail-label">Description:</div>
+                            <div class="desc-box">${escapeHtml(d.Description)}</div>
+                        `;
+                        contentDiv.innerHTML = html;
+                        panel.style.display = 'block';
+                    } else {
+                        panel.style.display = 'none';
+                    }
+                } else {
+                    panel.style.display = 'none';
+                }
+            });
+
+            network.on('dragEnd', function(params) {
+                if (!params.nodes || params.nodes.length === 0) return;
+                pinNodes(params.nodes);
+            });
+        }
+
+        function searchNode() {
+            const wrapper = document.getElementById('searchBoxWrapper');
+            if (wrapper.style.display === 'none') {
+                wrapper.style.display = 'block';
+                document.getElementById('searchInput').focus();
+                return;
+            }
+            
+            if(!network) return;
+            const term = document.getElementById('searchInput').value.toLowerCase().trim();
+            if(!term) {
+                document.getElementById('searchInput').focus();
+                return;
+            }
+
+            const match = nodes.get().find(n => n.group === 'leaf' && 
+                (
+                    n.details.OpportunityTitle.toLowerCase().includes(term) ||
+                    n.details.OpportunityID.toLowerCase().includes(term) ||
+                    n.details.OpportunityNumber.toLowerCase().includes(term)
+                )
+            );
+            
+            if (match) {
+                network.focus(match.id, { scale: 1.5, animation: { duration: 800 } });
+                network.selectNodes([match.id]);
+                network.emit("click", { nodes: [match.id] });
+            } else {
+                alert('Opportunity not found.');
+            }
+        }
+
+        function escapeHtml(value) {
+            return String(value == null ? '' : value)
+                .replace(/&/g, '&amp;')
+                .replace(/</g, '&lt;')
+                .replace(/>/g, '&gt;')
+                .replace(/"/g, '&quot;')
+                .replace(/'/g, '&#39;');
+        }
+    </script>
+</body>
+</html>

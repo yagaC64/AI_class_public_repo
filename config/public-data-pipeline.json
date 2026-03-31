@@ -1,0 +1,32 @@
+{
+  "pipeline_name": "ricce-ontology-local-private-preview",
+  "input": "data/private/ricce-ontology-master.csv",
+  "output": "public/data/local/ricce-ontology-private-preview.csv",
+  "manifest": "public/data/local/ricce-ontology-private-preview.manifest.json",
+  "source_to_public_field_map": {
+    "Name": "Name",
+    "Organization": "Organization",
+    "Service Area of the Non-Profit Organization": "Service Area"
+  },
+  "required_source_fields": [
+    "Name",
+    "Organization",
+    "Service Area of the Non-Profit Organization"
+  ],
+  "required_public_fields": [
+    "Name",
+    "Organization"
+  ],
+  "default_public_values": {
+    "Service Area": "Other"
+  },
+  "unique_public_fields": [
+    "Name",
+    "Organization",
+    "Service Area"
+  ],
+  "sort_by_public_fields": [
+    "Name",
+    "Organization"
+  ]
+}

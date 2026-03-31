@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RICCE Ontology Explorer</title>
+  <meta
+    name="description"
+    content="Interactive ontology graph starter for RICCE, prepared for Firebase Hosting with a public-safe sample dataset."
+  >
+  <link rel="stylesheet" href="/assets/css/styles.css">
+</head>
+<body class="app-body">
+  <div class="app-shell">
+    <aside class="panel panel-left">
+      <div class="panel-section">
+        <p class="eyebrow">RICCE</p>
+        <h1>Ontology Explorer</h1>
+        <p class="subtitle">
+          Public-safe ontology starter for relationship mapping with sample data, plus an optional path
+          to Google Sheets + Apps Script when you want a protected runtime data source.
+        </p>
+      </div>
+
+      <div class="stat-grid" aria-label="Dataset summary">
+        <div class="stat-card">
+          <span class="stat-label">Profiles</span>
+          <strong id="profileCount">0</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Organizations</span>
+          <strong id="organizationCount">0</strong>
+        </div>
+        <div class="stat-card">
+          <span class="stat-label">Service Areas</span>
+          <strong id="serviceAreaCount">0</strong>
+        </div>
+      </div>
+
+      <div id="statusMessage" class="status-card" role="status">Loading dataset...</div>
+
+      <div id="fileFallback" class="panel-section file-fallback is-hidden">
+        <label for="csvFileInput">Manual CSV fallback</label>
+        <p class="helper-copy">
+          If the configured dataset cannot be loaded, you can temporarily load a publish-safe CSV
+          file from your machine.
+        </p>
+        <input type="file" id="csvFileInput" accept=".csv">
+      </div>
+
+      <div class="panel-section">
+        <label for="searchInput">Search profile</label>
+        <div class="search-row">
+          <input type="text" id="searchInput" placeholder="Type a name">
+          <button id="btnSearch" type="button">Find</button>
+        </div>
+      </div>
+
+      <div class="panel-section">
+        <label for="sliderArea">Inner ring spacing</label>
+        <input type="range" id="sliderArea" min="50" max="600" value="250">
+
+        <label for="sliderOrg">Mid ring spacing</label>
+        <input type="range" id="sliderOrg" min="50" max="500" value="150">
+
+        <label for="sliderName">Outer ring spacing</label>
+        <input type="range" id="sliderName" min="30" max="300" value="80">
+      </div>
+
+      <div class="panel-section">
+        <button id="btnReset" class="button button-secondary" type="button">Reset view</button>
+      </div>
+
+      <div class="panel-section">
+        <p class="eyebrow">Legend</p>
+        <ul class="legend-list">
+          <li><span class="legend-dot legend-center"></span>Core hub</li>
+          <li><span class="legend-dot legend-area"></span>Service area</li>
+          <li><span class="legend-dot legend-org"></span>Organization</li>
+          <li><span class="legend-dot legend-person"></span>Profile</li>
+        </ul>
+      </div>
+    </aside>
+
+    <main class="graph-stage">
+      <div id="mynetwork" aria-label="Ontology graph visualization"></div>
+    </main>
+
+    <aside class="panel panel-right">
+      <div class="panel-section">
+        <p class="eyebrow">Selection</p>
+        <h2 id="panelTitle">Profile details</h2>
+        <p id="selectionPlaceholder" class="helper-copy">
+          Select a profile node to inspect the sample fields exposed in this public demo.
+        </p>
+        <div id="panelContent" class="detail-list"></div>
+      </div>
+
+      <div class="panel-section">
+        <p class="eyebrow">Runtime</p>
+        <dl class="meta-list">
+          <div>
+            <dt>Data mode</dt>
+            <dd id="dataModeLabel">-</dd>
+          </div>
+          <div>
+            <dt>Source</dt>
+            <dd id="dataSourceLabel">-</dd>
+          </div>
+          <div>
+            <dt>Admin mode</dt>
+            <dd id="adminModeLabel">-</dd>
+          </div>
+          <div>
+            <dt>Debug UI</dt>
+            <dd id="debugModeLabel">-</dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="panel-section">
+        <p class="helper-copy">
+          Local private preview: append <code>?csv=/data/local/ricce-ontology-private-preview.csv</code>
+          after generating the local preview file with <code>./scripts/publish_public_data.sh</code>.
+        </p>
+      </div>
+
+      <div class="panel-section">
+        <a class="text-link" href="/admin/">Open admin notes</a>
+      </div>
+    </aside>
+  </div>
+
+  <script src="/assets/js/site-config.js"></script>
+  <script src="/assets/js/site-shared.js"></script>
+  <script src="/assets/vendor/vis-network.min.js"></script>
+  <script src="/assets/vendor/papaparse.min.js"></script>
+  <script src="/assets/js/ontology-app.js"></script>
+</body>
+</html>
