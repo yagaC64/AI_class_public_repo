@@ -11,7 +11,7 @@
     const runtimeRows = [
       ["App name", config.appName],
       ["Data mode", shared.labelMode(config.dataMode)],
-      ["CSV path", config.csvDataPath],
+      ["CSV path", shared.resolveAppPath(config.csvDataPath)],
       ["Apps Script URL", config.appsScriptWebAppUrl || "Not configured"],
       ["Admin mode", shared.labelMode(config.adminMode)],
       ["Admin sheet URL", config.adminSheetUrl || "Not configured"],
@@ -33,8 +33,8 @@
       config.appsScriptWebAppUrl
         ? `<li><a class="text-link" href="${shared.escapeHtml(config.appsScriptWebAppUrl)}" target="_blank" rel="noreferrer">Open Apps Script endpoint</a></li>`
         : "<li>Apps Script web app URL is not configured yet.</li>",
-      '<li><a class="text-link" href="/data/ricce-ontology-sample.csv">Inspect the bundled sample dataset</a></li>',
-      "<li>Local private preview path: /data/local/ricce-ontology-private-preview.csv</li>"
+      `<li><a class="text-link" href="${shared.escapeHtml(shared.resolveAppPath(config.csvDataPath))}">Inspect the bundled sample dataset</a></li>`,
+      `<li>Local private preview path: ${shared.escapeHtml(shared.resolveAppPath("data/local/ricce-ontology-private-preview.csv"))}</li>`
     ];
 
     configLinks.innerHTML = links.join("");

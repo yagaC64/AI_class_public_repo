@@ -5,6 +5,30 @@ window.RICCEShared = (() => {
     sheet: "Protected Google Sheet",
     functions: "Firebase Functions"
   };
+  const APP_ROOT_PATH = (() => {
+    const currentScript = document.currentScript;
+    if (currentScript instanceof HTMLScriptElement && currentScript.src) {
+      const rootUrl = new URL("../../", currentScript.src);
+      return rootUrl.pathname.endsWith("/") ? rootUrl.pathname : `${rootUrl.pathname}/`;
+    }
+
+    return "/";
+  })();
+
+  function resolveAppPath(candidate) {
+    const value = String(candidate ?? "").trim();
+
+    if (!value) {
+      return "";
+    }
+
+    if (/^[a-z][a-z0-9+.-]*:/i.test(value) || value.startsWith("//")) {
+      return value;
+    }
+
+    const normalized = value.replace(/^\/+/, "");
+    return `${APP_ROOT_PATH}${normalized}`.replace(/\/{2,}/g, "/");
+  }
 
   function getConfig() {
     if (!window.RICCE_SITE_CONFIG) {
@@ -22,15 +46,15 @@ window.RICCEShared = (() => {
       return "";
     }
 
-    if (/^\/data\/[A-Za-z0-9/_\.-]+\.csv$/.test(candidate)) {
-      return candidate;
+    if (/^\/?data\/[A-Za-z0-9/_\.-]+\.csv$/.test(candidate)) {
+      return resolveAppPath(candidate);
     }
 
     return "";
   }
 
   function getRuntimeCsvPath(config) {
-    return getCsvOverridePath() || config.csvDataPath;
+    return getCsvOverridePath() || resolveAppPath(config.csvDataPath);
   }
 
   function escapeHtml(value) {
@@ -70,6 +94,7 @@ window.RICCEShared = (() => {
   return {
     escapeHtml,
     getConfig,
+    resolveAppPath,
     getRuntimeCsvPath,
     labelMode,
     setStatus,

@@ -2,6 +2,12 @@
 
 Public-safe ontology starter for Firebase Hosting.
 
+It also supports GitHub Pages for the three static entry points:
+
+- ontology explorer
+- grants.gov explorer
+- SAM.gov explorer
+
 This repo is distilled for public access:
 
 - fictional sample data only
@@ -70,6 +76,31 @@ python3 -m http.server 8000 --bind 127.0.0.1 --directory public
 Then open:
 
 - `http://127.0.0.1:8000/`
+- `http://127.0.0.1:8000/tools/grants_gov.html`
+- `http://127.0.0.1:8000/tools/sam_gov.html`
+
+## GitHub Pages
+
+This repo now includes a GitHub Actions workflow that deploys the tracked `public/` bundle to GitHub Pages from `main`.
+
+One-time setup in GitHub:
+
+1. Push the repo with `.github/workflows/deploy-pages.yml` on `main`.
+2. In the GitHub repo, open `Settings` -> `Pages`.
+3. Under `Build and deployment`, set `Source` to `GitHub Actions`.
+4. Push to `main` again if needed, or run the `Deploy GitHub Pages` workflow from the `Actions` tab.
+
+If the repo owner remains `yagaC64` and the repo name remains `AI_class_public_repo`, the Pages URLs are:
+
+- Ontology explorer: `https://yagaC64.github.io/AI_class_public_repo/`
+- Grants.gov explorer: `https://yagaC64.github.io/AI_class_public_repo/tools/grants_gov.html`
+- SAM.gov explorer: `https://yagaC64.github.io/AI_class_public_repo/tools/sam_gov.html`
+
+Notes:
+
+- The GitHub Pages deployment is public-safe and sample-first.
+- `public/data/local/` stays local-only and is not part of the tracked Pages deployment.
+- Firebase Hosting still works; the app now resolves asset and dataset paths correctly under both root hosting and a repo subpath.
 
 ## Use your own private data locally
 
@@ -83,7 +114,7 @@ Then open:
 3. Start the local server with `./run.sh` option `4`, or `.\run.ps1` on Windows.
 4. Open:
 
-   - `http://127.0.0.1:8000/?csv=/data/local/ricce-ontology-private-preview.csv`
+   - `http://127.0.0.1:8000/?csv=data/local/ricce-ontology-private-preview.csv`
 
 That query-string override is local-only. Do not point a public deployment at that path.
 
