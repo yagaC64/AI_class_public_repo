@@ -161,3 +161,4 @@ Official starting points verified on March 31, 2026:
 - This repo intentionally ships with no PII and no private data files.
 - `public/data/local/` is gitignored and excluded from Firebase Hosting.
 - If you switch to Apps Script mode, keep the backend response limited to the public-safe fields only.
+- Repo governance baseline and current GitHub policy state are tracked in [REPO_POLICY.md](REPO_POLICY.md).
